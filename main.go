@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	imagev1client "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
@@ -19,12 +20,10 @@ func main() {
 		&clientcmd.ConfigOverrides{},
 	)
 
-	// Determine the Namespace referenced by the current context in the
-	// kubeconfig file.
-	namespace, _, err := kubeconfig.Namespace()
-	if err != nil {
-		panic(err)
-	}
+	namespace := resolveNamespace(kubeconfig)
+
+	flag.StringVar(&namespace, "n", namespace, "Namespace to use, defaults to the namespace defined in kubeconfig")
+	flag.Parse()
 
 	// Get a rest.Config from the kubeconfig file.  This will be passed into all
 	// the client objects we create.
@@ -61,4 +60,13 @@ func main() {
 	for _, tag := range tags {
 		fmt.Println(tag)
 	}
+}
+
+// Get the namespace defined in the kubeconfig
+func resolveNamespace(kubeconfig clientcmd.ClientConfig) (namespace string) {
+	namespace, _, err := kubeconfig.Namespace()
+	if err != nil {
+		panic(err)
+	}
+	return
 }
