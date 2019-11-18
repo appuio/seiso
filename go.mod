@@ -20,7 +20,6 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
-	k8s.io/api v0.0.0-20190503184017-f1b257a4ce96 // indirect
 	k8s.io/apimachinery v0.0.0-20191116203941-08e4eafd6d11
-	k8s.io/client-go v8.0.0+incompatible
+	k8s.io/client-go v12.0.0+incompatible
 )
