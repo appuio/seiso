@@ -1,0 +1,36 @@
+# Make sure to check the documentation at http://goreleaser.com
+
+builds:
+- goarch:
+  - amd64
+  - arm
+  - arm64
+  - 386
+  goos:
+  - linux
+  - darwin
+  goarm:
+  - 7
+  -
+archives:
+- format: binary
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-snapshot"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+
+release:
+  github:
+    owner: appuio
+    name: image-cleanup
+  # eh, wait for final polishing of the changelog etc.
+  draft: true

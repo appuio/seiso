@@ -1,4 +1,4 @@
-module github.com/appuio/image-cleanup-client
+module github.com/appuio/image-cleanup
 
 go 1.13
 
