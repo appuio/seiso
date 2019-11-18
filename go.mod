@@ -7,7 +7,7 @@ require (
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/openshift/api v3.9.1-0.20190322043348-8741ff068a47+incompatible // indirect
-	github.com/openshift/client-go v0.0.0-20180830153425-431ec9a26e50
+	github.com/openshift/client-go/v3 v3.9.0
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cobra v0.0.5
