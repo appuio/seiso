@@ -1,0 +1,42 @@
+---
+name: Test
+
+on:
+  push:
+    branches-ignore:
+    - master
+    tags-ignore:
+    - "*"
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    #- name: Lint YAML files
+    #  run: docker run --rm -v $(pwd):/data docker.io/cytopia/yamllint .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/cache@v1
+      with:
+        path: /home/runner/go/pkg/mod
+        key: go-mod
+    - name: Run unit tests
+      run: go test ./...
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/cache@v1
+      with:
+        path: /home/runner/go/pkg/mod
+        key: go-mod
+    - uses: goreleaser/goreleaser-action@v1
+      with:
+        args: release --snapshot
