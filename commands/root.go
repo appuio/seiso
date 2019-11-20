@@ -1,6 +1,7 @@
 package commands
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,8 @@ func init() {
 }
 
 // Execute executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
+func Execute() {
+	if err:= rootCmd.Execute(); err != nil {
+		log.WithError(err).Fatal("Could not execute command.")
+	}
 }
