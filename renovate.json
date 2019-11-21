@@ -1,5 +1,9 @@
 {
   "extends": [
     "config:base"
+  ],
+  "ignorePaths": [
+    "go.mod",
+    "go.sum"
   ]
 }
