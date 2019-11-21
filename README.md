@@ -31,3 +31,9 @@ go test ./...
 ```
 ./dist/image-cleanup_linux_amd64/image-cleanup --help
 ```
+
+## License
+
+This project is BSD 3-Clause licensed (see LICENSE file for details).
+
+This project uses other OpenSource software as listed in `go.mod` and indirectly in `go.sum` files. All their licenses apply too.
