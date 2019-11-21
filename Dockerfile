@@ -25,7 +25,6 @@ FROM docker.io/multiarch/alpine:${ARCH} as runtime
 
 ENV ALPINE_MIRROR=http://dl-cdn.alpinelinux.org/alpine
 ENTRYPOINT ["image-cleanup"]
-EXPOSE 8080
 
 RUN \
     echo "${ALPINE_MIRROR}/${ALPINE_REL}/main" > /etc/apk/repositories && \
