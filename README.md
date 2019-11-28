@@ -1,12 +1,14 @@
 # Image Cleanup Client
 
+![](https://img.shields.io/docker/pulls/appuio/image-cleanup)
+![](https://img.shields.io/github/v/release/appuio/image-cleanup)
+![](https://img.shields.io/github/license/appuio/image-cleanup)
+
 ## General
 
 The image cleanup client is used to clean up Docker images in a Docker Registry when they are tagged using git SHA.
 
 This helps to save space because obsolete images are being removed from the registry.
-
-The respective licenses for attribution are placed in `/attribution`.
 
 ## Development
 
