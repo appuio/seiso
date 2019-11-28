@@ -32,6 +32,8 @@ go test ./...
 ### Run
 ```
 ./dist/image-cleanup_linux_amd64/image-cleanup --help
+# or
+docker run --rm -it appuio/image-cleanup:master
 ```
 
 ## License
