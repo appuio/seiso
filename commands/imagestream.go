@@ -17,38 +17,39 @@ var imagestreamCmd = &cobra.Command{
 	Use:   "imagestream",
 	Short: "Print imagestreams from namespace",
 	Long:  `tbd`,
-	Run: func(cmd *cobra.Command, args []string) {
-		// Instantiate loader for kubeconfig file.
-		kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-			clientcmd.NewDefaultClientConfigLoadingRules(),
-			&clientcmd.ConfigOverrides{},
-		)
+	Run: printImageStreamsFromNamespace,
+}
 
-		namespace := resolveNamespace(kubeconfig)
+func printImageStreamsFromNamespace(cmd *cobra.Command, args []string) {
+	// Instantiate loader for kubeconfig file.
+	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		clientcmd.NewDefaultClientConfigLoadingRules(),
+		&clientcmd.ConfigOverrides{},
+	)
 
-		// Get a rest.Config from the kubeconfig file.  This will be passed into all
-		// the client objects we create.
-		restconfig, err := kubeconfig.ClientConfig()
-		if err != nil {
-			panic(err)
-		}
+	namespace := resolveNamespace(kubeconfig)
 
-		// Create an OpenShift image/v1 client.
-		imageclient, err := imagev1client.NewForConfig(restconfig)
-		if err != nil {
-			panic(err)
-		}
+	// Get a rest.Config from the kubeconfig file.  This will be passed into all
+	// the client objects we create.
+	restconfig, err := kubeconfig.ClientConfig()
+	if err != nil {
+		panic(err)
+	}
 
-		imagestreamlist, err := imageclient.ImageStreams(namespace).List(metav1.ListOptions{})
-		if err != nil {
-			panic(err)
-		}
+	// Create an OpenShift image/v1 client.
+	imageclient, err := imagev1client.NewForConfig(restconfig)
+	if err != nil {
+		panic(err)
+	}
 
-		for _, imagestream := range imagestreamlist.Items {
-			fmt.Println(imagestream.ObjectMeta.Name)
-		}
+	imagestreamlist, err := imageclient.ImageStreams(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
 
-	},
+	for _, imagestream := range imagestreamlist.Items {
+		fmt.Println(imagestream.ObjectMeta.Name)
+	}
 }
 
 // Get the namespace defined in the kubeconfig
