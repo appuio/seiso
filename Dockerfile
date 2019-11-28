@@ -1,7 +1,7 @@
 #______________________________________________________________________________
 #### Base Image, to save build time on local dev machine
 ARG GOARCH=amd64
-ARG ARCH=amd64-edge
+ARG ARCH=amd64-3.10
 FROM docker.io/library/golang:1.13-alpine as builder
 
 WORKDIR /go/src/app
@@ -20,7 +20,7 @@ RUN \
 
 #______________________________________________________________________________
 #### Runtime Image
-ARG ARCH=amd64-edge
+ARG ARCH=amd64-3.10
 FROM docker.io/multiarch/alpine:${ARCH} as runtime
 
 ENV ALPINE_MIRROR=http://dl-cdn.alpinelinux.org/alpine
