@@ -1,7 +1,9 @@
 # Make sure to check the documentation at http://goreleaser.com
 
 builds:
-- goarch:
+- env:
+  - CGO_ENABLED=0 # this is needed otherwise the Docker image build is faulty
+  goarch:
   - amd64
   - arm
   - arm64
@@ -11,7 +13,7 @@ builds:
   - darwin
   goarm:
   - 7
-  -
+
 archives:
 - format: binary
 
@@ -20,6 +22,11 @@ checksum:
 
 snapshot:
   name_template: "{{ .Tag }}-snapshot"
+
+dockers:
+- image_templates:
+  - "docker.io/appuio/image-cleanup:{{ .Tag }}"
+  - "docker.io/appuio/image-cleanup:{{ .Major }}"
 
 changelog:
   sort: asc

@@ -12,13 +12,6 @@ env:
   REGISTRY_IMAGE: docker.io/appuio/image-cleanup
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    #- name: Lint YAML files
-    #  run: docker run --rm -v $(pwd):/data docker.io/cytopia/yamllint .
-
   test:
     runs-on: ubuntu-latest
     steps:
@@ -30,31 +23,9 @@ jobs:
     - name: Run unit tests
       run: go test ./...
 
-  docker:
-    runs-on: ubuntu-latest
-    needs:
-    - lint
-    - test
-    steps:
-    - uses: actions/checkout@v1
-    - name: Register qemu for multiarch build
-      run: docker run --rm --privileged docker.io/multiarch/qemu-user-static:register --reset
-    - name: Build Docker image
-      run: >
-        docker build
-        --tag ${REGISTRY_IMAGE}:${GITHUB_REF##*/}
-        --build-arg VERSION=${GITHUB_REF##*/}
-        --build-arg GIT_COMMIT=${GITHUB_SHA:-unknown}
-        .
-    - name: Login to Docker hub
-      run: docker login -u ${{ secrets.DOCKER_HUB_USER }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
-    - name: Push Docker image
-      run: docker push ${REGISTRY_IMAGE}:${GITHUB_REF##*/}
-
   release:
     runs-on: ubuntu-latest
     needs:
-    - lint
     - test
     if: github.ref != 'refs/heads/master'
     steps:
@@ -63,6 +34,8 @@ jobs:
       with:
         path: /home/runner/go/pkg/mod
         key: go-mod
+    - name: Login to Docker hub
+      run: docker login -u ${{ secrets.DOCKER_HUB_USER }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
     - uses: goreleaser/goreleaser-action@v1
       with:
         args: release

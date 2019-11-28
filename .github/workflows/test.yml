@@ -11,13 +11,6 @@ on:
     types: [opened, reopened]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    #- name: Lint YAML files
-    #  run: docker run --rm -v $(pwd):/data docker.io/cytopia/yamllint .
-
   test:
     runs-on: ubuntu-latest
     steps:

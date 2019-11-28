@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-git.v4"
@@ -18,19 +19,21 @@ var gitCmd = &cobra.Command{
 	Short: "Print the git HEAD",
 	Long:  `tbd`,
 	Args:  cobra.ExactValidArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		worktree := osfs.New(args[0])
-		gitdir, err := worktree.Chroot(".git")
-		if err != nil {
-			panic(err)
-		}
+	Run: PrintGitHEAD,
+}
 
-		storer := filesystem.NewStorage(gitdir, nil)
-		repository, err := git.Open(storer, worktree)
-		if err != nil {
-			panic(err)
-		}
+func PrintGitHEAD(cmd *cobra.Command, args []string) {
+	worktree := osfs.New(args[0])
+	gitdir, err := worktree.Chroot(".git")
+	if err != nil {
+		log.WithError(err).WithField("path", ".git").Fatal("Could not change root")
+	}
 
-		fmt.Println(repository.Head())
-	},
+	storer := filesystem.NewStorage(gitdir, nil)
+	repository, err := git.Open(storer, worktree)
+	if err != nil {
+		log.WithError(err).WithField("path", ".git").Fatal("Could not open git repository")
+	}
+
+	fmt.Println(repository.Head())
 }

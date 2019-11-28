@@ -28,7 +28,7 @@ func ConfigureLogging() {
 		FullTimestamp: true,
 	})
 
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 
 	//TODO: To make this configurable via flag
 	level, err := log.ParseLevel("debug")
