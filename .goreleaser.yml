@@ -39,5 +39,3 @@ release:
   github:
     owner: appuio
     name: image-cleanup
-  # eh, wait for final polishing of the changelog etc.
-  draft: true
