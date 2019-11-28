@@ -1,7 +1,11 @@
 # Image Cleanup Client
 
-![](https://img.shields.io/docker/pulls/appuio/image-cleanup)
-![](https://img.shields.io/github/v/release/appuio/image-cleanup)
+[![dockeri.co](https://dockeri.co/image/appuio/image-cleanup)](https://hub.docker.com/r/appuio/image-cleanup)
+
+![](https://img.shields.io/github/workflow/status/appuio/image-cleanup/Release)
+![](https://img.shields.io/github/v/release/appuio/image-cleanup?include_prereleases)
+![](https://img.shields.io/github/issues-raw/appuio/image-cleanup)
+![](https://img.shields.io/github/issues-pr-raw/appuio/image-cleanup)
 ![](https://img.shields.io/github/license/appuio/image-cleanup)
 
 ## General
