@@ -3,38 +3,91 @@ package openshift
 import (
 	log "github.com/sirupsen/logrus"
 
+	"github.com/appuio/image-cleanup/cleanup"
+	"github.com/appuio/image-cleanup/git"
 	"github.com/appuio/image-cleanup/kubernetes"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// NewImageStreamCommand creates a cobra command to print imagestreams of a namespace
-func NewImageStreamCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "imagestream",
-		Short: "Print imagestreams from namespace",
-		Long:  `tbd`,
-		Run:   printImageStreamsFromNamespace,
+var (
+	resources = []schema.GroupVersionResource{
+		schema.GroupVersionResource{Version: "v1", Resource: "pods"},
+		schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"},
+		schema.GroupVersionResource{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"},
+		schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
+		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "deployments"},
+		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "replicasets"},
 	}
+)
 
+// Options is a struct to support the cleanup command
+type Options struct {
+	Force       bool
+	CommitLimit int
+	RepoPath    string
+	Keep        int
+	ImageStream string
+}
+
+// NewImageStreamCleanupCommand creates a cobra command to clean up an imagestream based on commits
+func NewImageStreamCleanupCommand() *cobra.Command {
+	o := Options{}
+	cmd := &cobra.Command{
+		Use:     "imagestream",
+		Aliases: []string{"is"},
+		Short:   "Clean up excessive image tags",
+		Long:    `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
+		Run:     o.cleanupImageStreamTags,
+	}
+	cmd.Flags().BoolVarP(&o.Force, "force", "f", false, "delete image stream tags")
+	cmd.Flags().IntVarP(&o.CommitLimit, "git-commit-limit", "l", 100, "only look at the first <n> commits to compare with tags")
+	cmd.Flags().StringVarP(&o.RepoPath, "git-repo-path", "p", ".", "absolute path to Git repository (for current dir use: $PWD)")
+	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "keep most current <n> images")
 	return cmd
 }
 
-func printImageStreamsFromNamespace(cmd *cobra.Command, args []string) {
-	imageClient := NewImageV1Client()
+func (o *Options) cleanupImageStreamTags(cmd *cobra.Command, args []string) {
+	o.ImageStream = args[0]
 
-	imageStreams, err := imageClient.ImageStreams(kubernetes.Namespace()).List(metav1.ListOptions{})
-	if err != nil {
-		log.WithError(err).Fatal("Could not retrieve list of image streams.")
-	}
+	commitHashes := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
 
-	for _, imageStream := range imageStreams.Items {
-		log.Println(imageStream.ObjectMeta.Name)
+	imageStreamTags := getImageStreamTags(o.ImageStream)
+
+	matchingTags := cleanup.GetTagsMatchingPrefixes(commitHashes, imageStreamTags)
+
+	activeImageStreamTags := getActiveImageStreamTags(o.ImageStream, imageStreamTags)
+
+	inactiveTags := cleanup.GetInactiveTags(activeImageStreamTags, matchingTags)
+
+	log.Printf("Tags for deletion: %s", inactiveTags)
+
+	if o.Force {
+		for _, inactiveTag := range inactiveTags {
+			deleteImageStreamTag(buildImageStreamTagName(o.ImageStream, inactiveTag))
+			log.Printf("Deleted image stream tag: %s", inactiveTag)
+		}
 	}
 }
 
-// GetImageStreamTags retrieves the tags for an image stream
-func GetImageStreamTags(imageStreamName string) []string {
+func getActiveImageStreamTags(imageStream string, imageStreamTags []string) []string {
+	var activeImageStreamTags []string
+
+	for _, resource := range resources {
+		for _, imageStreamTag := range imageStreamTags {
+			image := buildImageStreamTagName(imageStream, imageStreamTag)
+
+			if kubernetes.ResourceContains(image, resource) {
+				activeImageStreamTags = append(activeImageStreamTags, imageStreamTag)
+			}
+		}
+	}
+
+	return activeImageStreamTags
+}
+
+func getImageStreamTags(imageStreamName string) []string {
 	var imageStreamTags []string
 
 	imageClient := NewImageV1Client()
@@ -51,8 +104,7 @@ func GetImageStreamTags(imageStreamName string) []string {
 	return imageStreamTags
 }
 
-// DeleteImageStreamTag deletes an image stream tag
-func DeleteImageStreamTag(name string) {
+func deleteImageStreamTag(name string) {
 	imageclient := NewImageV1Client()
 
 	err := imageclient.ImageStreamTags(kubernetes.Namespace()).Delete(name, &metav1.DeleteOptions{})
@@ -61,7 +113,6 @@ func DeleteImageStreamTag(name string) {
 	}
 }
 
-// BuildImageStreamTagName builds the name of an image stream tag
-func BuildImageStreamTagName(imageStream string, imageStreamTag string) string {
+func buildImageStreamTagName(imageStream string, imageStreamTag string) string {
 	return imageStream + ":" + imageStreamTag
 }

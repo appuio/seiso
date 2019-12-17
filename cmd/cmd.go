@@ -21,7 +21,7 @@ func NewCleanupCommand() *cobra.Command {
 	cmds.AddCommand(cleanup.NewCleanupCommand())
 	cmds.AddCommand(docker.NewTagCommand())
 	cmds.AddCommand(git.NewGitCommand())
-	cmds.AddCommand(openshift.NewImageStreamCommand())
+	cmds.AddCommand(openshift.NewImageStreamCleanupCommand())
 	cmds.AddCommand(version.NewVersionCommand())
 
 	return cmds
