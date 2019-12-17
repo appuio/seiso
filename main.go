@@ -4,22 +4,17 @@ import (
 	"os"
 
 	"github.com/appuio/image-cleanup/cmd"
-	"github.com/appuio/image-cleanup/version"
 )
 
-// CLI Version constants
-const (
-	VERSION = "latest"
-	COMMIT  = "snapshot"
-	DATE    = "unknown"
+var (
+	version string
+	commit  string
+	date    string
 )
 
 func main() {
-	version.Version = VERSION
-	version.Commit = COMMIT
-	version.Date = DATE
 
-	command := cmd.NewCleanupCommand()
+	command := cmd.NewCleanupCommand(cmd.Build{Version: version, Commit: commit, Date: date})
 
 	if err := command.Execute(); err != nil {
 		os.Exit(1)

@@ -6,11 +6,17 @@ import (
 	"github.com/appuio/image-cleanup/docker"
 	"github.com/appuio/image-cleanup/git"
 	"github.com/appuio/image-cleanup/openshift"
-	"github.com/appuio/image-cleanup/version"
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
 )
+
+// Build contains build information for the cobra version flag
+type Build struct {
+	Version string
+	Commit  string
+	Date    string
+}
 
 // Options is a struct holding the options of the root command
 type Options struct {
@@ -18,7 +24,7 @@ type Options struct {
 }
 
 // NewCleanupCommand creates the `image-cleanup` command
-func NewCleanupCommand() *cobra.Command {
+func NewCleanupCommand(build Build) *cobra.Command {
 	o := Options{}
 	cmds := &cobra.Command{
 		Use:              "image-cleanup",
@@ -26,6 +32,7 @@ func NewCleanupCommand() *cobra.Command {
 		Long:             "image-cleanup cleans up docker images.",
 		PersistentPreRun: o.init,
 		Run:              runHelp,
+		Version:          build.Version + "\ncommit = " + build.Commit + "\ndate = " + build.Date,
 	}
 
 	cmds.PersistentFlags().StringVarP(&o.LogLevel, "verbosity", "v", "info", "Log level to use")
@@ -33,7 +40,6 @@ func NewCleanupCommand() *cobra.Command {
 	cmds.AddCommand(docker.NewTagCommand())
 	cmds.AddCommand(git.NewGitCommand())
 	cmds.AddCommand(openshift.NewImageStreamCleanupCommand())
-	cmds.AddCommand(version.NewVersionCommand())
 
 	return cmds
 }
