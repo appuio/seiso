@@ -48,7 +48,7 @@ func GetCommitHashes(repoPath string, commitLimit int) []string {
 	for i := 0; i < commitLimit; i++ {
 		commit, err := commitIter.Next()
 		if err != nil {
-			log.WithError(err).Fatal("Could not get commit.")
+			log.WithError(err).Debug("Could not get commit.")
 		} else {
 			commitHashes = append(commitHashes, commit.Hash.String())
 		}
