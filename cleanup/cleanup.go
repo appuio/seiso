@@ -1,8 +1,9 @@
 package cleanup
 
 import (
-	"fmt"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/appuio/image-cleanup/git"
 	"github.com/appuio/image-cleanup/kubernetes"
@@ -50,34 +51,30 @@ func NewCleanupCommand() *cobra.Command {
 func (o *Options) cleanupImageStreamTags(cmd *cobra.Command, args []string) {
 	o.ImageStream = args[0]
 
-	fmt.Println(o.ImageStream)
-
-	commitHashes, err := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
-	if err != nil {
-		panic(err)
-	}
+	commitHashes := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
 
 	imageStreamTags := openshift.GetImageStreamTags(o.ImageStream)
 
 	deletionCandidates := getDeletionCandidates(commitHashes, imageStreamTags, o.Keep)
 
-	activeimagestreamtags := getActiveImageStreamTags(o.ImageStream, imageStreamTags)
+	activeImageStreamTags := getActiveImageStreamTags(o.ImageStream, imageStreamTags)
 
-	for _, activeimagestreamtag := range activeimagestreamtags {
+	// Remove the activeImageStreamTags from the deletionCandidates
+	for _, activeImageStreamTag := range activeImageStreamTags {
 		for i, deletionCandidate := range deletionCandidates {
-			if activeimagestreamtag == deletionCandidate {
+			if activeImageStreamTag == deletionCandidate {
 				deletionCandidates[i] = deletionCandidates[len(deletionCandidates)-1]
 				deletionCandidates = deletionCandidates[:len(deletionCandidates)-1]
 			}
 		}
 	}
 
-	fmt.Println("candidates for deletion:", deletionCandidates)
+	log.Printf("Candidates for deletion: %s", deletionCandidates)
 
 	if o.Force {
 		for _, deletionCandidate := range deletionCandidates {
 			openshift.DeleteImageStreamTag(openshift.BuildImageStreamTagName(o.ImageStream, deletionCandidate))
-			fmt.Println("deleted imagestreamtag: ", deletionCandidate)
+			log.Printf("Deleted image stream tag: %s", deletionCandidate)
 		}
 	}
 }

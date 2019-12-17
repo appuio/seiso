@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	log "github.com/sirupsen/logrus"
 	"k8s.io/client-go/dynamic"
 	apps "k8s.io/client-go/kubernetes/typed/apps/v1"
 	batch "k8s.io/client-go/kubernetes/typed/batch/v1beta1"
@@ -20,7 +21,7 @@ func NewBatchV1beta1Client() *batch.BatchV1beta1Client {
 func NewDynamicClient() dynamic.Interface {
 	dynamicInterface, err := dynamic.NewForConfig(RestConfig())
 	if err != nil {
-		panic(err)
+		log.WithError(err).Fatal("Could not create dynamic client for rest config.")
 	}
 
 	return dynamicInterface

@@ -1,8 +1,6 @@
 package docker
 
 import (
-	"fmt"
-
 	"github.com/heroku/docker-registry-client/registry"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -37,6 +35,6 @@ func printImageStreamTags(cmd *cobra.Command, args []string) {
 	}
 
 	for _, tag := range tags {
-		fmt.Println(tag)
+		log.Println(tag)
 	}
 }

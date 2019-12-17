@@ -1,7 +1,7 @@
 package openshift
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/appuio/image-cleanup/kubernetes"
 	"github.com/spf13/cobra"
@@ -21,15 +21,15 @@ func NewImageStreamCommand() *cobra.Command {
 }
 
 func printImageStreamsFromNamespace(cmd *cobra.Command, args []string) {
-	imageclient := NewImageV1Client()
+	imageClient := NewImageV1Client()
 
-	imagestreamlist, err := imageclient.ImageStreams(kubernetes.Namespace()).List(metav1.ListOptions{})
+	imageStreams, err := imageClient.ImageStreams(kubernetes.Namespace()).List(metav1.ListOptions{})
 	if err != nil {
-		panic(err)
+		log.WithError(err).Fatal("Could not retrieve list of image streams.")
 	}
 
-	for _, imagestream := range imagestreamlist.Items {
-		fmt.Println(imagestream.ObjectMeta.Name)
+	for _, imageStream := range imageStreams.Items {
+		log.Println(imageStream.ObjectMeta.Name)
 	}
 }
 
@@ -37,14 +37,14 @@ func printImageStreamsFromNamespace(cmd *cobra.Command, args []string) {
 func GetImageStreamTags(imageStreamName string) []string {
 	var imageStreamTags []string
 
-	imageclient := NewImageV1Client()
+	imageClient := NewImageV1Client()
 
-	imagestream, err := imageclient.ImageStreams(kubernetes.Namespace()).Get(imageStreamName, metav1.GetOptions{})
+	imageStream, err := imageClient.ImageStreams(kubernetes.Namespace()).Get(imageStreamName, metav1.GetOptions{})
 	if err != nil {
-		panic(err)
+		log.WithError(err).WithField("imageStreamName", imageStreamName).Fatal("Could not retrieve image stream.")
 	}
 
-	for _, imageStreamTag := range imagestream.Status.Tags {
+	for _, imageStreamTag := range imageStream.Status.Tags {
 		imageStreamTags = append(imageStreamTags, imageStreamTag.Tag)
 	}
 
@@ -57,10 +57,8 @@ func DeleteImageStreamTag(name string) {
 
 	err := imageclient.ImageStreamTags(kubernetes.Namespace()).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
-		panic(err)
+		log.WithError(err).WithField("name", name).Fatal("Could not delete image stream.")
 	}
-
-	return
 }
 
 // BuildImageStreamTagName builds the name of an image stream tag

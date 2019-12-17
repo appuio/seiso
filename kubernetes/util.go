@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -13,7 +14,7 @@ func ResourceContains(value string, resource schema.GroupVersionResource) bool {
 
 	objectlist, err := dynamicclient.Resource(resource).Namespace(Namespace()).List(metav1.ListOptions{})
 	if err != nil {
-		panic(err)
+		log.WithError(err).WithField("resource", resource).Fatal("Could not load objects.")
 	}
 	for _, item := range objectlist.Items {
 		return ObjectContains(value, item.Object)

@@ -1,8 +1,6 @@
 package git
 
 import (
-	"fmt"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4"
@@ -30,29 +28,31 @@ func printGitHEAD(cmd *cobra.Command, args []string) {
 		log.WithError(err).WithField("path", path).Fatal("Could not open repository")
 	}
 
-	fmt.Println(repository.Head())
+	log.Println(repository.Head())
 }
 
 // GetCommitHashes returns the commit hashes of a given repository ordered by the `git.LogOrderCommitterTime`
-func GetCommitHashes(repoPath string, commitLimit int) (commits []string, err error) {
+func GetCommitHashes(repoPath string, commitLimit int) []string {
+	var commitHashes []string
+
 	r, err := git.PlainOpen(repoPath)
 	if err != nil {
-		panic(err)
+		log.WithError(err).WithField("repoPath", repoPath).Fatal("Could not open Git repository.")
 	}
 
 	commitIter, err := r.Log(&git.LogOptions{Order: git.LogOrderCommitterTime})
 	if err != nil {
-		return nil, err
+		log.WithError(err).Fatal("Could not get commits from repository.")
 	}
 
 	for i := 0; i < commitLimit; i++ {
 		commit, err := commitIter.Next()
 		if err != nil {
-			break
+			log.WithError(err).Fatal("Could not get commit.")
+		} else {
+			commitHashes = append(commitHashes, commit.Hash.String())
 		}
-
-		commits = append(commits, commit.Hash.String())
 	}
 
-	return
+	return commitHashes
 }
