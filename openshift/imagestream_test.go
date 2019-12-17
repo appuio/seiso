@@ -1,11 +1,11 @@
-package commands
+package openshift
 
 import (
 	"github.com/spf13/cobra"
 	"testing"
 )
 
-func Test_printGitHEAD(t *testing.T) {
+func Test_printImageStreamsFromNamespace(t *testing.T) {
 	type args struct {
 		cmd  *cobra.Command
 		args []string

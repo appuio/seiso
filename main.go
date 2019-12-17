@@ -1,28 +1,36 @@
 package main
 
 import (
-	"github.com/appuio/image-cleanup/commands"
 	"os"
+
+	"github.com/appuio/image-cleanup/cmd"
+	"github.com/appuio/image-cleanup/version"
 
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	version = "latest"
-	commit  = "snapshot"
-	date    = "unknown"
+// CLI Version constants
+const (
+	VERSION = "latest"
+	COMMIT  = "snapshot"
+	DATE    = "unknown"
 )
 
 func main() {
-	commands.Version = version
-	commands.Commit = commit
-	commands.Date = date
+	version.Version = VERSION
+	version.Commit = COMMIT
+	version.Date = DATE
 
-	ConfigureLogging()
-	commands.Execute()
+	command := cmd.NewCleanupCommand()
+
+	configureLogging()
+
+	if err := command.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
 
-func ConfigureLogging() {
+func configureLogging() {
 
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,

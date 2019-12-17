@@ -1,11 +1,11 @@
-package commands
+package docker
 
 import (
 	"github.com/spf13/cobra"
 	"testing"
 )
 
-func Test_printImageStreamsFromNamespace(t *testing.T) {
+func Test_printImageStreamTags(t *testing.T) {
 	type args struct {
 		cmd  *cobra.Command
 		args []string

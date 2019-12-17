@@ -1,4 +1,4 @@
-package commands
+package docker
 
 import (
 	"fmt"
@@ -8,18 +8,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var image string
+// NewTagCommand creates a cobra command to print the tags of a docker image
+func NewTagCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "tag",
+		Short: "Print the available tags",
+		Long:  `tbd`,
+		Args:  cobra.ExactValidArgs(1),
+		Run:   printImageStreamTags,
+	}
 
-func init() {
-	rootCmd.AddCommand(tagCmd)
-}
-
-var tagCmd = &cobra.Command{
-	Use:   "tag",
-	Short: "Print the available tags",
-	Long:  `tbd`,
-	Args:  cobra.ExactValidArgs(1),
-	Run:   printImageStreamTags,
+	return cmd
 }
 
 func printImageStreamTags(cmd *cobra.Command, args []string) {
