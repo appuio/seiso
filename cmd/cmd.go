@@ -3,9 +3,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/appuio/image-cleanup/docker"
-	"github.com/appuio/image-cleanup/git"
-	"github.com/appuio/image-cleanup/openshift"
 	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
@@ -37,9 +34,8 @@ func NewCleanupCommand(build Build) *cobra.Command {
 
 	cmds.PersistentFlags().StringVarP(&o.LogLevel, "verbosity", "v", "info", "Log level to use")
 
-	cmds.AddCommand(docker.NewTagCommand())
-	cmds.AddCommand(git.NewGitCommand())
-	cmds.AddCommand(openshift.NewImageStreamCleanupCommand())
+	cmds.AddCommand(NewTagsCommand())
+	cmds.AddCommand(NewImageStreamCleanupCommand())
 
 	return cmds
 }

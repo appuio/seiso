@@ -43,7 +43,7 @@ func Test_GetTagsMatchingPrefixes(t *testing.T) {
 		"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
 	}
 
-	matchingTags := GetTagsMatchingPrefixes(prefixes, tags)
+	matchingTags := GetTagsMatchingPrefixes(&prefixes, &tags)
 
 	assert.Equal(t, expected, matchingTags)
 }
@@ -56,7 +56,7 @@ func Test_GetInactiveTags(t *testing.T) {
 		"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
 	}
 
-	inactiveTags := GetInactiveTags(activeTags, tags)
+	inactiveTags := GetInactiveTags(&activeTags, &tags)
 
 	assert.Equal(t, expected, inactiveTags)
 }
@@ -69,7 +69,15 @@ func Test_LimitTags(t *testing.T) {
 		"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
 	}
 
-	limitedTags := LimitTags(tags, 2)
+	limitedTags := LimitTags(&tags, 2)
+
+	assert.Equal(t, expected, limitedTags)
+}
+
+func Test_LimitTagsEmpty(t *testing.T) {
+	expected := []string{}
+
+	limitedTags := LimitTags(&tags, len(tags))
 
 	assert.Equal(t, expected, limitedTags)
 }
