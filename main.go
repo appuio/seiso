@@ -1,41 +1,22 @@
 package main
 
 import (
-	"github.com/appuio/image-cleanup/commands"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/appuio/image-cleanup/cmd"
 )
 
 var (
-	version = "latest"
-	commit  = "snapshot"
-	date    = "unknown"
+	version string
+	commit  string
+	date    string
 )
 
 func main() {
-	commands.Version = version
-	commands.Commit = commit
-	commands.Date = date
 
-	ConfigureLogging()
-	commands.Execute()
-}
+	command := cmd.NewCleanupCommand(cmd.Build{Version: version, Commit: commit, Date: date})
 
-func ConfigureLogging() {
-
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
-
-	log.SetOutput(os.Stderr)
-
-	//TODO: To make this configurable via flag
-	level, err := log.ParseLevel("debug")
-	if err != nil {
-		log.WithField("error", err).Warn("Using info level.")
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(level)
+	if err := command.Execute(); err != nil {
+		os.Exit(1)
 	}
 }
