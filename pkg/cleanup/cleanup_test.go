@@ -6,78 +6,117 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	// Contains one value not present in `tags` and one shortend value
-	prefixes = []string{
-		"0b81a958f590ed7ed8",
-		"108f2be974f8e1e5fec8bc759ecf824e81565747",
-		"4cb7de27c985216b8888ff6049294dae02f3282e",
-		"fa617c0bbf84f09c569870653729aab82766e549",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
-	}
-	// Contains one value not present in `prefixes` and one extended value
-	tags = []string{
-		"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
-		"108f2be974f8e1e5fec8bc759ecf824e81565747",
-		"4cb7de27c985216b8888ff6049294dae02f3282e",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
-		"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
-	}
+type GetTagsMatchingPrefixesTestCase struct {
+	prefixes, tags, expected []string
+}
 
-	// Contains two values not present in `tags`
-	activeTags = []string{
-		"108f2be974f8e1e5fec8bc759ecf824e81565747",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
-		"fa617c0bbf84f09c569870653729aab82766e549",
-		"v3.0.0",
-	}
-)
+type GetInactiveTagsTestCase struct {
+	tags, activeTags, expected []string
+}
+
+type LimitTagsTestCase struct {
+	tags, expected []string
+	limit          int
+}
 
 func Test_GetTagsMatchingPrefixes(t *testing.T) {
-	expected := []string{
-		"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
-		"108f2be974f8e1e5fec8bc759ecf824e81565747",
-		"4cb7de27c985216b8888ff6049294dae02f3282e",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+	testcases := []GetTagsMatchingPrefixesTestCase{
+		GetTagsMatchingPrefixesTestCase{
+			prefixes: []string{
+				"0b81a958f590ed7ed8",
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"fa617c0bbf84f09c569870653729aab82766e549",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+			},
+			tags: []string{
+				"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+			},
+			expected: []string{
+				"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+			},
+		},
 	}
 
-	matchingTags := GetTagsMatchingPrefixes(&prefixes, &tags)
-
-	assert.Equal(t, expected, matchingTags)
+	for _, testcase := range testcases {
+		assert.Equal(t, testcase.expected, GetTagsMatchingPrefixes(&testcase.prefixes, &testcase.tags))
+	}
 }
 
 func Test_GetInactiveTags(t *testing.T) {
-	expected := []string{
-		"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
-		"4cb7de27c985216b8888ff6049294dae02f3282e",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
-		"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+	testcases := []GetInactiveTagsTestCase{
+		GetInactiveTagsTestCase{
+			tags: []string{
+				"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+			},
+			activeTags: []string{
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+				"fa617c0bbf84f09c569870653729aab82766e549",
+				"v3.0.0",
+			},
+			expected: []string{
+				"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+			},
+		},
 	}
 
-	inactiveTags := GetInactiveTags(&activeTags, &tags)
-
-	assert.Equal(t, expected, inactiveTags)
+	for _, testcase := range testcases {
+		assert.Equal(t, testcase.expected, GetInactiveTags(&testcase.activeTags, &testcase.tags))
+	}
 }
 
 func Test_LimitTags(t *testing.T) {
-	expected := []string{
-		"4cb7de27c985216b8888ff6049294dae02f3282e",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
-		"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
-		"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+	testcases := []LimitTagsTestCase{
+		LimitTagsTestCase{
+			tags: []string{
+				"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+			},
+			limit: 2,
+			expected: []string{
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+			},
+		},
+		LimitTagsTestCase{
+			tags: []string{
+				"0b81a958f590ed7ed8be6ec0a2a87816228a482c",
+				"108f2be974f8e1e5fec8bc759ecf824e81565747",
+				"4cb7de27c985216b8888ff6049294dae02f3282e",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd",
+				"4b35e092ad45a626d9a43b7bc7b03e7f7c3c8037",
+				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
+			},
+			limit:    6,
+			expected: []string{},
+		},
 	}
 
-	limitedTags := LimitTags(&tags, 2)
-
-	assert.Equal(t, expected, limitedTags)
-}
-
-func Test_LimitTagsEmpty(t *testing.T) {
-	expected := []string{}
-
-	limitedTags := LimitTags(&tags, len(tags))
-
-	assert.Equal(t, expected, limitedTags)
+	for _, testcase := range testcases {
+		assert.Equal(t, testcase.expected, LimitTags(&testcase.tags, testcase.limit))
+	}
 }
