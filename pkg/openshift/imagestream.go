@@ -40,6 +40,29 @@ func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []s
 	return activeImageStreamTags, nil
 }
 
+// GetImageStreams returns the image streams in a namespace
+func GetImageStreams(namespace string) ([]string, error) {
+	var imageStreams []string
+
+	imageClient, err := NewImageV1Client()
+	if err != nil {
+		return nil, err
+	}
+
+	imageStreamList, err := imageClient.ImageStreams(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	imageStreams = make([]string, len(imageStreamList.Items))
+
+	for i, imageStream := range imageStreamList.Items {
+		imageStreams[i] = imageStream.Name
+	}
+
+	return imageStreams, nil
+}
+
 // GetImageStreamTags returns the tags of an image stream
 func GetImageStreamTags(namespace, imageStreamName string) ([]string, error) {
 	var imageStreamTags []string

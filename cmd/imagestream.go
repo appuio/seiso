@@ -39,8 +39,10 @@ func NewImageStreamCleanupCommand() *cobra.Command {
 }
 
 func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, args []string) {
-	o.ImageStream = args[0]
-
+	if len(args) > 0 {
+		o.ImageStream = args[0]
+	}
+	
 	if len(o.Namespace) == 0 {
 		namespace, err := kubernetes.Namespace()
 		if err != nil {
@@ -48,6 +50,17 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 		}
 
 		o.Namespace = namespace
+	}
+
+	if len(o.ImageStream) == 0 {
+		imageStreams, err := openshift.GetImageStreams(o.Namespace)
+		if err != nil {
+			log.WithError(err).WithField("namespace", o.Namespace).Fatal("Could not retrieve image streams.")
+		}
+
+		log.Printf("No image stream provided as argument. Available image streams for namespace %s: %s", o.Namespace, imageStreams)
+
+		return
 	}
 
 	commitHashes, err := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
