@@ -40,7 +40,7 @@ func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []s
 	return activeImageStreamTags, nil
 }
 
-// GetImageStreams returns the image streams in a namespace
+// GetImageStreams returns the image streams for a namespace
 func GetImageStreams(namespace string) ([]string, error) {
 	var imageStreams []string
 
