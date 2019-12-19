@@ -82,6 +82,8 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 
 	inactiveTags := cleanup.GetInactiveTags(&activeImageStreamTags, &matchingTags)
 
+	inactiveTags = cleanup.LimitTags(&inactiveTags, o.Keep)
+
 	log.Printf("Tags for deletion: %s", inactiveTags)
 
 	if o.Force {
