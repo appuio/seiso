@@ -21,7 +21,7 @@ func GetCommitHashes(repoPath string, commitLimit int) ([]string, error) {
 		return nil, err
 	}
 
-	for i := 0; i < commitLimit; i++ {
+	for i := 0; i < commitLimit || commitLimit < 0; i++ {
 		commit, err := commitIter.Next()
 		if err != nil {
 			if err == io.EOF {
