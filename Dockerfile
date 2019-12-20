@@ -1,4 +1,4 @@
-FROM docker.io/library/alpine:3.10 as runtime
+FROM docker.io/library/alpine:3.11 as runtime
 
 ENTRYPOINT ["image-cleanup"]
 
