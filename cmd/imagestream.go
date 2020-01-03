@@ -18,6 +18,7 @@ type ImageStreamCleanupOptions struct {
 	Keep        int
 	ImageStream string
 	Namespace   string
+	Tag         bool
 }
 
 // NewImageStreamCleanupCommand creates a cobra command to clean up an imagestream based on commits
@@ -35,6 +36,7 @@ func NewImageStreamCleanupCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&o.RepoPath, "git-repo-path", "p", ".", "absolute path to Git repository (for current dir use: $PWD)")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "Kubernetes namespace")
 	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "keep most current <n> images")
+	cmd.Flags().BoolVarP(&o.Tag, "tag", "t", false, "use tags instead of commit hashes")
 	return cmd
 }
 
@@ -42,7 +44,7 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 	if len(args) > 0 {
 		o.ImageStream = args[0]
 	}
-	
+
 	if len(o.Namespace) == 0 {
 		namespace, err := kubernetes.Namespace()
 		if err != nil {
@@ -63,9 +65,19 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 		return
 	}
 
-	commitHashes, err := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
-	if err != nil {
-		log.WithError(err).WithField("RepoPath", o.RepoPath).WithField("CommitLimit", o.CommitLimit).Fatal("Retrieving commit hashes failed.")
+	var commits []string
+	if o.Tag {
+		var err error
+		commits, err = git.GetCommitTags(o.RepoPath, o.CommitLimit)
+		if err != nil {
+			log.WithError(err).WithField("RepoPath", o.RepoPath).WithField("CommitLimit", o.CommitLimit).Fatal("Retrieving commit tags failed.")
+		}
+	} else {
+		var err error
+		commits, err = git.GetCommitHashes(o.RepoPath, o.CommitLimit)
+		if err != nil {
+			log.WithError(err).WithField("RepoPath", o.RepoPath).WithField("CommitLimit", o.CommitLimit).Fatal("Retrieving commit hashes failed.")
+		}
 	}
 
 	imageStreamTags, err := openshift.GetImageStreamTags(o.Namespace, o.ImageStream)
@@ -73,7 +85,7 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 		log.WithError(err).WithField("Namespace", o.Namespace).WithField("ImageStream", o.ImageStream).Fatal("Could not retrieve image stream.")
 	}
 
-	matchingTags := cleanup.GetTagsMatchingPrefixes(&commitHashes, &imageStreamTags)
+	matchingTags := cleanup.GetTagsMatchingPrefixes(&commits, &imageStreamTags, o.Tag)
 
 	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(o.Namespace, o.ImageStream, imageStreamTags)
 	if err != nil {

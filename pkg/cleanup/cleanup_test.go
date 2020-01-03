@@ -19,7 +19,7 @@ type LimitTagsTestCase struct {
 	limit          int
 }
 
-func Test_GetTagsMatchingPrefixes(t *testing.T) {
+func Test_GetTagsMatchingPrefixesCommitHashes(t *testing.T) {
 	testcases := []GetTagsMatchingPrefixesTestCase{
 		GetTagsMatchingPrefixesTestCase{
 			prefixes: []string{
@@ -48,7 +48,37 @@ func Test_GetTagsMatchingPrefixes(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		assert.Equal(t, testcase.expected, GetTagsMatchingPrefixes(&testcase.prefixes, &testcase.tags))
+		assert.Equal(t, testcase.expected, GetTagsMatchingPrefixes(&testcase.prefixes, &testcase.tags, false))
+	}
+}
+
+func Test_GetTagsMatchingPrefixesCommitTags(t *testing.T) {
+	testcases := []GetTagsMatchingPrefixesTestCase{
+		GetTagsMatchingPrefixesTestCase{
+			prefixes: []string{
+				"v1.0.2",
+				"2.3",
+				"1.0",
+				"v3.1.2",
+				"v2",
+			},
+			tags: []string{
+				"1.0",
+				"3.4",
+				"v1.0.2",
+				"0.0.1",
+				"0.0.2",
+				"v2.3.0",
+			},
+			expected: []string{
+				"v1.0.2",
+				"1.0",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		assert.Equal(t, testcase.expected, GetTagsMatchingPrefixes(&testcase.prefixes, &testcase.tags, true))
 	}
 }
 

@@ -1,12 +1,13 @@
 package cleanup
 
 import (
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // GetTagsMatchingPrefixes returns all tags matching one of the provided prefixes
-func GetTagsMatchingPrefixes(prefixes, tags *[]string) []string {
+func GetTagsMatchingPrefixes(prefixes, tags *[]string, commitTag bool) []string {
 	var matchingTags []string
 
 	log.Debugf("GetTagsMatchingPrefixes | Prefixes: %s", prefixes)
@@ -15,9 +16,9 @@ func GetTagsMatchingPrefixes(prefixes, tags *[]string) []string {
 	if len(*prefixes) > 0 && len(*tags) > 0 {
 		for _, prefix := range *prefixes {
 			for _, tag := range *tags {
-				if strings.HasPrefix(tag, prefix) {
+				if match(tag, prefix, commitTag) {
 					matchingTags = append(matchingTags, tag)
-					log.Debugf("GetTagsMatchingPrefixes | Tag %s has prefix %s", tag, prefix)
+					log.Debugf("GetTagsMatchingPrefixes | Tag %s matched with %s", tag, prefix)
 				}
 			}
 		}
@@ -58,4 +59,12 @@ func LimitTags(tags *[]string, keep int) []string {
 	}
 
 	return []string{}
+}
+
+//Depending on commit type (hash or tag) use different matching logic
+func match(tag, prefix string, commitTag bool) bool {
+	if commitTag {
+		return tag == prefix
+	}
+	return strings.HasPrefix(tag, prefix)
 }

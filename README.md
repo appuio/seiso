@@ -10,7 +10,7 @@
 
 ## General
 
-The image cleanup client is used to clean up Docker images in a Docker Registry when they are tagged using git SHA.
+The image cleanup client is used to clean up Docker images in a Docker Registry when they are tagged using git SHA. The cleaning is done either using git commit hashes or tags. Defaults to hashes otherwise ```-t``` flag should be used.
 
 This helps to save space because obsolete images are being removed from the registry.
 
