@@ -19,6 +19,7 @@ type ImageStreamCleanupOptions struct {
 	ImageStream string
 	Namespace   string
 	Tag         bool
+	Sorted      string
 }
 
 // NewImageStreamCleanupCommand creates a cobra command to clean up an imagestream based on commits
@@ -37,6 +38,7 @@ func NewImageStreamCleanupCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "Kubernetes namespace")
 	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "keep most current <n> images")
 	cmd.Flags().BoolVarP(&o.Tag, "tag", "t", false, "use tags instead of commit hashes")
+	cmd.Flags().StringVar(&o.Sorted, "sort-by", git.Version.String(), "sort tags either by version or in alphabetical order. The sort can be version or alphabetic")
 	return cmd
 }
 
@@ -67,8 +69,11 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 
 	var commits []string
 	if o.Tag {
+		if !git.IsValidSortValue(o.Sorted) {
+			log.WithField("namespace", o.Namespace).Fatal("Invalid sort flag")
+		}
 		var err error
-		commits, err = git.GetCommitTags(o.RepoPath, o.CommitLimit)
+		commits, err = git.GetCommitTags(o.RepoPath, o.CommitLimit, git.SortTagBy(o.Sorted))
 		if err != nil {
 			log.WithError(err).WithField("RepoPath", o.RepoPath).WithField("CommitLimit", o.CommitLimit).Fatal("Retrieving commit tags failed.")
 		}
