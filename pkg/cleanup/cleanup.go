@@ -6,19 +6,31 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetTagsMatchingPrefixes returns all tags matching one of the provided prefixes
-func GetTagsMatchingPrefixes(prefixes, tags *[]string, commitTag bool) []string {
+// MatchOption type defines how the tags should be matched
+type MatchOption int8
+
+const (
+	MatchOptionDefault MatchOption = iota
+	MatchOptionExact
+	MatchOptionPrefix
+)
+
+// GetMatchingTags returns all tags matching one of the provided prefixes
+func GetMatchingTags(values, tags *[]string, matchOption MatchOption) []string {
 	var matchingTags []string
 
-	log.Debugf("GetTagsMatchingPrefixes | Prefixes: %s", prefixes)
-	log.Debugf("GetTagsMatchingPrefixes | Tags: %s", tags)
+	log.WithField("values", values).Debug("values")
+	log.WithField("tags", tags).Debug("tags")
 
-	if len(*prefixes) > 0 && len(*tags) > 0 {
-		for _, prefix := range *prefixes {
+	if len(*values) > 0 && len(*tags) > 0 {
+		for _, value := range *values {
 			for _, tag := range *tags {
-				if match(tag, prefix, commitTag) {
+				if match(tag, value, matchOption) {
 					matchingTags = append(matchingTags, tag)
-					log.Debugf("GetTagsMatchingPrefixes | Tag %s matched with %s", tag, prefix)
+					log.WithFields(log.Fields{
+						"tag":   tag,
+						"value": value}).
+						Debug("Tag matched")
 				}
 			}
 		}
@@ -30,15 +42,15 @@ func GetTagsMatchingPrefixes(prefixes, tags *[]string, commitTag bool) []string 
 func GetInactiveTags(activeTags, tags *[]string) []string {
 	var inactiveTags []string
 
-	log.Debugf("GetInactiveTags | Active tags: %s", activeTags)
-	log.Debugf("GetInactiveTags | Tags: %s", tags)
+	log.WithField("activeTags", activeTags).Debug("Active tags")
+	log.WithField("tags", tags).Debug("Tags")
 
 	for _, tag := range *tags {
 		active := false
 		for _, activeTag := range *activeTags {
 			if tag == activeTag {
 				active = true
-				log.Debugf("GetInactiveTags | Tag %s is part of the active tags", tag)
+				log.WithField("tag", tag).Debug("The tag is part of the active tags")
 				break
 			}
 		}
@@ -61,10 +73,12 @@ func LimitTags(tags *[]string, keep int) []string {
 	return []string{}
 }
 
-//Depending on commit type (hash or tag) use different matching logic
-func match(tag, prefix string, commitTag bool) bool {
-	if commitTag {
-		return tag == prefix
+func match(tag, value string, matchOption MatchOption) bool {
+	switch matchOption {
+	case MatchOptionDefault, MatchOptionPrefix:
+		return strings.HasPrefix(tag, value)
+	case MatchOptionExact:
+		return tag == value
 	}
-	return strings.HasPrefix(tag, prefix)
+	return false
 }

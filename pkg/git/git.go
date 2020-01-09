@@ -1,13 +1,9 @@
 package git
 
 import (
-	"errors"
 	"io"
-	"sort"
 	"strings"
 
-	"github.com/hashicorp/go-version"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -40,8 +36,8 @@ func GetCommitHashes(repoPath string, commitLimit int) ([]string, error) {
 	return commitHashes, nil
 }
 
-// GetCommitTags returns the commit tags of a given repository ordered alphabetically or by version. If `commitLimit` is -1 all tags will be returned.
-func GetCommitTags(repoPath string, tagLimit int, sortTagBy SortTagBy) ([]string, error) {
+// GetTags returns the commit tags of a given repository ordered alphabetically or by version. If `commitLimit` is -1 all tags will be returned.
+func GetTags(repoPath string, tagLimit int, sortTagBy SortOption) ([]string, error) {
 	var commitTags []string
 
 	repository, err := git.PlainOpen(repoPath)
@@ -71,38 +67,5 @@ func GetCommitTags(repoPath string, tagLimit int, sortTagBy SortTagBy) ([]string
 		commitTags = append(commitTags, tagName)
 	}
 
-	return Sort(commitTags, sortTagBy)
-}
-
-// Sort function sorts the slice according to the sort type
-func Sort(tags []string, sortTagBy SortTagBy) ([]string, error) {
-	switch sortTagBy {
-
-	case Version:
-		var versionTags []*version.Version
-		for _, raw := range tags {
-			version, err := version.NewVersion(raw)
-			if err != nil {
-				log.WithError(err).WithField("tag", raw).Warn("Skipped invalid version")
-			} else {
-				versionTags = append(versionTags, version)
-			}
-		}
-
-		sort.Sort(sort.Reverse(version.Collection(versionTags)))
-
-		sortedTags := make([]string, len(versionTags))
-		for i, sortedVersion := range versionTags {
-			sortedTags[i] = sortedVersion.Original()
-		}
-
-		return sortedTags, nil
-
-	case Alphabetic:
-		sort.Strings(tags)
-		return tags, nil
-
-	default:
-		return nil, errors.New("Undefined sort type")
-	}
+	return sortTags(commitTags, sortTagBy)
 }
