@@ -26,8 +26,8 @@ snapshot:
 
 dockers:
 - image_templates:
-  - "docker.io/appuio/image-cleanup:{{ .Tag }}"
-  - "docker.io/appuio/image-cleanup:{{ .Major }}"
+  - "docker.io/appuio/image-cleanup:v{{ .Tag }}"
+  - "docker.io/appuio/image-cleanup:v{{ .Major }}"
 
 changelog:
   sort: asc
