@@ -16,6 +16,7 @@ builds:
 
 archives:
 - format: binary
+  name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 
 checksum:
   name_template: 'checksums.txt'
