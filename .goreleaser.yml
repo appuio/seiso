@@ -16,6 +16,7 @@ builds:
 
 archives:
 - format: binary
+  name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 
 checksum:
   name_template: 'checksums.txt'
@@ -25,8 +26,8 @@ snapshot:
 
 dockers:
 - image_templates:
-  - "docker.io/appuio/image-cleanup:{{ .Tag }}"
-  - "docker.io/appuio/image-cleanup:{{ .Major }}"
+  - "docker.io/appuio/image-cleanup:v{{ .Version }}"
+  - "docker.io/appuio/image-cleanup:v{{ .Major }}"
 
 changelog:
   sort: asc

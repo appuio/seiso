@@ -40,6 +40,10 @@ go test ./...
 docker run --rm -it appuio/image-cleanup:<tag>
 ```
 
+## Release
+
+Push a git tag with the scheme `vX.Y.Z`.
+
 ## License
 
 This project is BSD 3-Clause licensed (see LICENSE file for details).
