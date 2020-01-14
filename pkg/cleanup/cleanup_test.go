@@ -6,8 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type GetTagsMatchingPrefixesTestCase struct {
-	prefixes, tags, expected []string
+type GetMatchingTagsTestCase struct {
+	matchValues, tags, expected []string
+	matchOption MatchOption
 }
 
 type GetInactiveTagsTestCase struct {
@@ -19,10 +20,10 @@ type LimitTagsTestCase struct {
 	limit          int
 }
 
-func Test_GetTagsMatchingPrefixes(t *testing.T) {
-	testcases := []GetTagsMatchingPrefixesTestCase{
-		GetTagsMatchingPrefixesTestCase{
-			prefixes: []string{
+func Test_GetMatchingTags(t *testing.T) {
+	testcases := []GetMatchingTagsTestCase{
+		GetMatchingTagsTestCase{
+			matchValues: []string{
 				"0b81a958f590ed7ed8",
 				"108f2be974f8e1e5fec8bc759ecf824e81565747",
 				"4cb7de27c985216b8888ff6049294dae02f3282e",
@@ -45,10 +46,32 @@ func Test_GetTagsMatchingPrefixes(t *testing.T) {
 				"c8a693ad89e7069674eda512c553ff56d3ca2ffd-debug",
 			},
 		},
+		GetMatchingTagsTestCase{
+			matchValues: []string{
+				"v1.0.2",
+				"2.3",
+				"1.0",
+				"v3.1.2",
+				"v2",
+			},
+			tags: []string{
+				"1.0",
+				"3.4",
+				"v1.0.2",
+				"0.0.1",
+				"0.0.2",
+				"v2.3.0",
+			},
+			matchOption: MatchOptionExact,
+			expected: []string{
+				"v1.0.2",
+				"1.0",
+			},
+		},
 	}
 
 	for _, testcase := range testcases {
-		assert.Equal(t, testcase.expected, GetTagsMatchingPrefixes(&testcase.prefixes, &testcase.tags))
+		assert.Equal(t, testcase.expected, GetMatchingTags(&testcase.matchValues, &testcase.tags, testcase.matchOption))
 	}
 }
 

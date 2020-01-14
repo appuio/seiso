@@ -2,6 +2,7 @@ package git
 
 import (
 	"io"
+	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
 )
@@ -33,4 +34,38 @@ func GetCommitHashes(repoPath string, commitLimit int) ([]string, error) {
 	}
 
 	return commitHashes, nil
+}
+
+// GetTags returns the commit tags of a given repository ordered alphabetically or by version. If `commitLimit` is -1 all tags will be returned.
+func GetTags(repoPath string, tagLimit int, sortTagBy SortOption) ([]string, error) {
+	var commitTags []string
+
+	repository, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	tagIter, err := repository.Tags()
+	defer tagIter.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < tagLimit || tagLimit < 0; i++ {
+		tag, err := tagIter.Next()
+
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		splittedPath := strings.Split(tag.Name().String(), "/")
+		tagName := splittedPath[len(splittedPath)-1]
+
+		commitTags = append(commitTags, tagName)
+	}
+
+	return sortTags(commitTags, sortTagBy)
 }

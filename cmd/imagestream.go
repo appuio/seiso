@@ -18,6 +18,8 @@ type ImageStreamCleanupOptions struct {
 	Keep        int
 	ImageStream string
 	Namespace   string
+	Tag         bool
+	Sorted      string
 }
 
 // NewImageStreamCleanupCommand creates a cobra command to clean up an imagestream based on commits
@@ -35,6 +37,8 @@ func NewImageStreamCleanupCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&o.RepoPath, "git-repo-path", "p", ".", "absolute path to Git repository (for current dir use: $PWD)")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "Kubernetes namespace")
 	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "keep most current <n> images")
+	cmd.Flags().BoolVarP(&o.Tag, "tag", "t", false, "use tags instead of commit hashes")
+	cmd.Flags().StringVar(&o.Sorted, "sort", string(git.SortOptionVersion), "sort tags by criteria. Allowed values: [version, alphabetical]")
 	return cmd
 }
 
@@ -42,7 +46,11 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 	if len(args) > 0 {
 		o.ImageStream = args[0]
 	}
-	
+
+	if o.Tag && !git.IsValidSortValue(o.Sorted) {
+		log.WithField("sort_criteria", o.Sorted).Fatal("Invalid sort criteria")
+	}
+
 	if len(o.Namespace) == 0 {
 		namespace, err := kubernetes.Namespace()
 		if err != nil {
@@ -55,7 +63,9 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 	if len(o.ImageStream) == 0 {
 		imageStreams, err := openshift.GetImageStreams(o.Namespace)
 		if err != nil {
-			log.WithError(err).WithField("namespace", o.Namespace).Fatal("Could not retrieve image streams.")
+			log.WithError(err).
+				WithField("namespace", o.Namespace).
+				Fatal("Could not retrieve image streams.")
 		}
 
 		log.Printf("No image stream provided as argument. Available image streams for namespace %s: %s", o.Namespace, imageStreams)
@@ -63,35 +73,67 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 		return
 	}
 
-	commitHashes, err := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
-	if err != nil {
-		log.WithError(err).WithField("RepoPath", o.RepoPath).WithField("CommitLimit", o.CommitLimit).Fatal("Retrieving commit hashes failed.")
+	var matchValues []string
+	if o.Tag {
+		var err error
+		matchValues, err = git.GetTags(o.RepoPath, o.CommitLimit, git.SortOption(o.Sorted))
+		if err != nil {
+			log.WithError(err).
+				WithFields(log.Fields{
+					"RepoPath":    o.RepoPath,
+					"CommitLimit": o.CommitLimit}).
+				Fatal("Retrieving commit tags failed.")
+		}
+	} else {
+		var err error
+		matchValues, err = git.GetCommitHashes(o.RepoPath, o.CommitLimit)
+		if err != nil {
+			log.WithError(err).
+				WithFields(log.Fields{
+					"RepoPath":    o.RepoPath,
+					"CommitLimit": o.CommitLimit}).
+				Fatal("Retrieving commit hashes failed.")
+		}
 	}
 
 	imageStreamTags, err := openshift.GetImageStreamTags(o.Namespace, o.ImageStream)
 	if err != nil {
-		log.WithError(err).WithField("Namespace", o.Namespace).WithField("ImageStream", o.ImageStream).Fatal("Could not retrieve image stream.")
+		log.WithError(err).
+			WithFields(log.Fields{
+				"Namespace":   o.Namespace,
+				"ImageStream": o.ImageStream}).
+			Fatal("Could not retrieve image stream.")
 	}
 
-	matchingTags := cleanup.GetTagsMatchingPrefixes(&commitHashes, &imageStreamTags)
+	var matchOption cleanup.MatchOption
+	if o.Tag {
+		matchOption = cleanup.MatchOptionExact
+	}
+
+	matchingTags := cleanup.GetMatchingTags(&matchValues, &imageStreamTags, matchOption)
 
 	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(o.Namespace, o.ImageStream, imageStreamTags)
 	if err != nil {
-		log.WithError(err).WithField("Namespace", o.Namespace).WithField("ImageStream", o.ImageStream).WithField("imageStreamTags", imageStreamTags).Fatal("Could not retrieve active image stream tags.")
+		log.WithError(err).
+			WithFields(log.Fields{
+				"Namespace":       o.Namespace,
+				"ImageStream":     o.ImageStream,
+				"imageStreamTags": imageStreamTags}).
+			Fatal("Could not retrieve active image stream tags.")
 	}
 
 	inactiveTags := cleanup.GetInactiveTags(&activeImageStreamTags, &matchingTags)
 
 	inactiveTags = cleanup.LimitTags(&inactiveTags, o.Keep)
 
-	log.Printf("Tags for deletion: %s", inactiveTags)
+	log.WithField("inactiveTags", inactiveTags).Info("Tags for deletion")
 
 	if o.Force {
 		for _, inactiveTag := range inactiveTags {
 			openshift.DeleteImageStreamTag(o.Namespace, openshift.BuildImageStreamTagName(o.ImageStream, inactiveTag))
-			log.Printf("Deleted image stream tag: %s", inactiveTag)
+			log.WithField("inactiveTag", inactiveTag).Info("Deleted image stream tag")
 		}
 	} else {
-		log.Println("--force was not specified. Nothing has been deleted.")
+		log.Info("--force was not specified. Nothing has been deleted.")
 	}
 }
