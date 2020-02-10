@@ -29,25 +29,21 @@ func Test_GetCommitHashesFail(t *testing.T) {
 }
 
 func Test_GetTagsSortedInAlphabeticalOrder(t *testing.T) {
-	commitLimit := 2
-	commitHashes, err := GetTags("../..", commitLimit, "alphabetic") // Open repository from root dir
+	commitHashes, err := sortTags([]string{ "v0.1.0", "2.0", "0.0.1"}, SortOptionAlphabetic)
 
-	expectInOrder := []string{"0.0.1", "v0.1.0"}
+	expectInOrder := []string{"0.0.1", "2.0", "v0.1.0"}
 
 	assert.NoError(t, err)
-	assert.Len(t, commitHashes, commitLimit)
-	assert.EqualValues(t, commitHashes, expectInOrder)
+	assert.EqualValues(t, expectInOrder, commitHashes)
 }
 
 func Test_GetTagsSortedByVersion(t *testing.T) {
-	commitLimit := 2
-	commitHashes, err := GetTags("../..", commitLimit, "version") // Open repository from root dir
+	commitHashes, err := sortTags([]string{"0.0.5", "v0.1.0", "0.0.2", "v0.0.1"}, SortOptionVersion) // Open repository from root dir
 
-	expectInOrder := []string{"v0.1.0", "0.0.1"}
+	expectInOrder := []string{ "v0.1.0", "0.0.5", "0.0.2", "v0.0.1"}
 
 	assert.NoError(t, err)
-	assert.Len(t, commitHashes, commitLimit)
-	assert.EqualValues(t, commitHashes, expectInOrder)
+	assert.EqualValues(t, expectInOrder, commitHashes)
 }
 
 func Test_GetAllTags(t *testing.T) {
