@@ -9,7 +9,8 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/json-iterator/go v1.1.8 // indirect
-	github.com/openshift/api v3.9.1-0.20190322043348-8741ff068a47+incompatible // indirect
+	github.com/karrick/tparse v2.4.2+incompatible
+	github.com/openshift/api v3.9.1-0.20190322043348-8741ff068a47+incompatible
 	github.com/openshift/client-go v0.0.0-20180830153425-431ec9a26e50
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5

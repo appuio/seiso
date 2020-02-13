@@ -4,6 +4,7 @@ import (
 	"github.com/appuio/image-cleanup/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	imagev1 "github.com/openshift/api/image/v1"
 )
 
 var (
@@ -63,9 +64,8 @@ func GetImageStreams(namespace string) ([]string, error) {
 	return imageStreams, nil
 }
 
-// GetImageStreamTags returns the tags of an image stream
-func GetImageStreamTags(namespace, imageStreamName string) ([]string, error) {
-	var imageStreamTags []string
+// GetImageStreamTags returns the tags of an image stream older than the specified time
+func GetImageStreamTags(namespace, imageStreamName string) ([]imagev1.NamedTagEventList, error) {
 
 	imageClient, err := NewImageV1Client()
 	if err != nil {
@@ -77,13 +77,7 @@ func GetImageStreamTags(namespace, imageStreamName string) ([]string, error) {
 		return nil, err
 	}
 
-	imageStreamTags = make([]string, len(imageStream.Status.Tags))
-
-	for i, imageStreamTag := range imageStream.Status.Tags {
-		imageStreamTags[i] = imageStreamTag.Tag
-	}
-
-	return imageStreamTags, nil
+	return imageStream.Status.Tags, nil
 }
 
 // DeleteImageStreamTag deletes the image stream tag
