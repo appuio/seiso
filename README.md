@@ -40,6 +40,18 @@ go test ./...
 docker run --rm -it appuio/image-cleanup:<tag>
 ```
 
+## Migrate from legacy cleanup plugin
+
+Projects using the legacy `oc` cleanup plugin can be migrated to `image-cleanup` as follows
+
+```console
+oc -n "$OPENSHIFT_PROJECT" plugin cleanup "$APP_NAME" -p "$PWD" -f=y
+```
+becomes:
+```console
+image-cleanup imagestream "$APP_NAME" --namespace="$OPENSHIFT_PROJECT" --force --git-commit-limit=0
+```
+
 ## Release
 
 Push a git tag with the scheme `vX.Y.Z`.
