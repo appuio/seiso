@@ -34,7 +34,7 @@ func NewCleanupCommand(build Build) *cobra.Command {
 
 	cmds.PersistentFlags().StringVarP(&o.LogLevel, "verbosity", "v", "info", "Log level to use")
 
-	cmds.AddCommand(NewTagsCommand())
+	cmds.AddCommand(
 	cmds.AddCommand(NewImageStreamCleanupCommand())
 
 	return cmds
