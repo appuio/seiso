@@ -41,8 +41,8 @@ func GetMatchingTags(values, tags *[]string, matchOption MatchOption) []string {
 	return matchingTags
 }
 
-// GetInactiveTags returns the tags without active tags (unsorted)
-func GetInactiveTags(activeTags, tags *[]string) []string {
+// GetInactiveImageTags returns the tags without active tags (unsorted)
+func GetInactiveImageTags(activeTags, tags *[]string) []string {
 	var inactiveTags []string
 
 	log.WithField("activeTags", activeTags).Debug("Active tags")
