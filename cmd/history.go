@@ -2,19 +2,19 @@ package cmd
 
 import (
 	log "github.com/sirupsen/logrus"
-	"time"
 	"regexp"
+	"time"
 
 	"github.com/appuio/image-cleanup/pkg/cleanup"
 	"github.com/appuio/image-cleanup/pkg/git"
 	"github.com/appuio/image-cleanup/pkg/kubernetes"
 	"github.com/appuio/image-cleanup/pkg/openshift"
-	"github.com/spf13/cobra"
 	"github.com/karrick/tparse"
+	"github.com/spf13/cobra"
 )
 
-// ImageStreamCleanupOptions is a struct to support the cleanup command
-type ImageStreamCleanupOptions struct {
+// HistoryCleanupOptions is a struct to support the cleanup command
+type HistoryCleanupOptions struct {
 	Force       			 bool
 	CommitLimit 			 int
 	RepoPath    			 string
@@ -28,22 +28,22 @@ type ImageStreamCleanupOptions struct {
 	OrphanIncludeRegex       string
 }
 
-// NewImageStreamCleanupCommand creates a cobra command to clean up an imagestream based on commits
-func NewImageStreamCleanupCommand() *cobra.Command {
-	o := ImageStreamCleanupOptions{}
+// NewHistoryCleanupCommand creates a cobra command to clean up images by comparing the git commit history.
+func NewHistoryCleanupCommand() *cobra.Command {
+	o := HistoryCleanupOptions{}
 	cmd := &cobra.Command{
-		Use:     "imagestream",
-		Aliases: []string{"is"},
+		Use:     "history",
+		Aliases: []string{"hist"},
 		Short:   "Clean up excessive image tags",
 		Long:    `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
 		Run:     o.cleanupImageStreamTags,
 	}
 	cmd.Flags().BoolVarP(&o.Force, "force", "f", false, "delete image stream tags")
 	cmd.Flags().IntVarP(&o.CommitLimit, "git-commit-limit", "l", 0, "only look at the first <n> commits to compare with tags or use 0 for all commits")
-	cmd.Flags().StringVarP(&o.RepoPath, "git-repo-path", "p", ".", "absolute path to Git repository (for current dir use: $PWD)")
+	cmd.Flags().StringVarP(&o.RepoPath, "git-repo-path", "p", ".", "path to Git repository")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "Kubernetes namespace")
-	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "keep most current <n> images")
-	cmd.Flags().BoolVarP(&o.Tag, "tag", "t", false, "use tags instead of commit hashes")
+	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "keep most current <k> images")
+	cmd.Flags().BoolVarP(&o.Tag, "tags", "t", false, "use tags instead of commit hashes")
 	cmd.Flags().StringVar(&o.Sorted, "sort", string(git.SortOptionVersion), "sort tags by criteria. Allowed values: [version, alphabetical]")
 	cmd.Flags().BoolVarP(&o.Orphan, "orphan", "o", false, "delete images that do not match any git commit")
 	cmd.Flags().StringVar(&o.OlderThan, "older-than", "", "delete images that are older than the duration. Ex.: [1y2mo3w4d5h6m7s]")
@@ -51,7 +51,7 @@ func NewImageStreamCleanupCommand() *cobra.Command {
 	return cmd
 }
 
-func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, args []string) {
+func (o *HistoryCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
 		o.ImageStream = args[0]
 	}
@@ -157,7 +157,7 @@ func (o *ImageStreamCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, a
 	}
 }
 
-func validateFlagCombinationInput(o *ImageStreamCleanupOptions) {
+func validateFlagCombinationInput(o *HistoryCleanupOptions) {
 
 	if o.Orphan == false && o.OrphanIncludeRegex != "^[a-z0-9]{40}$" {
 		log.WithFields(log.Fields{"Orphan": o.Orphan, "Regex": o.OrphanIncludeRegex}).
@@ -192,7 +192,7 @@ func parseCutOffDateTime(olderThan string) time.Time {
 				WithField("--older-than", olderThan).
 				Fatal("Could not parse --older-than flag.")
 		}
-		return cutOffDateTime;
+		return cutOffDateTime
 	}
 
 	return time.Now()
