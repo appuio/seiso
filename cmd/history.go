@@ -98,8 +98,8 @@ func (o *HistoryCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, args 
 	if err != nil {
 		log.WithError(err).
 			WithFields(log.Fields{
-				"Namespace":   o.Namespace,
-				"ImageStream": o.ImageStream}).
+				"ImageRepository": o.Namespace,
+				"ImageStream":     o.ImageStream}).
 			Fatal("Could not retrieve image stream.")
 	}
 
@@ -119,7 +119,7 @@ func (o *HistoryCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, args 
 	if err != nil {
 		log.WithError(err).
 			WithFields(log.Fields{
-				"Namespace":       o.Namespace,
+				"ImageRepository": o.Namespace,
 				"ImageStream":     o.ImageStream,
 				"imageStreamTags": imageStreamTags}).
 			Fatal("Could not retrieve active image stream tags.")
@@ -132,14 +132,7 @@ func (o *HistoryCleanupOptions) cleanupImageStreamTags(cmd *cobra.Command, args 
 	log.WithField("inactiveTags", inactiveTags).Info("Compiled list of image tags to delete.")
 
 	if o.Force {
-		for _, inactiveTag := range inactiveTags {
-			err := openshift.DeleteImageStreamTag(o.Namespace, openshift.BuildImageStreamTagName(o.ImageStream, inactiveTag))
-			if err == nil {
-				log.WithField("imageTag", inactiveTag).Info("Deleted image tag.")
-			} else {
-				log.WithError(err).WithField("imageTag", inactiveTag).Error("Could not delete image.")
-			}
-		}
+		DeleteImages(inactiveTags, o.ImageStream, o.Namespace)
 	} else {
 		log.Info("--force was not specified. Nothing has been deleted.")
 	}

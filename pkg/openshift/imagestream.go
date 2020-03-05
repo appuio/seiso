@@ -2,9 +2,9 @@ package openshift
 
 import (
 	"github.com/appuio/image-cleanup/pkg/kubernetes"
+	imagev1 "github.com/openshift/api/image/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	imagev1 "github.com/openshift/api/image/v1"
 )
 
 var (

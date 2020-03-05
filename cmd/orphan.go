@@ -40,7 +40,7 @@ func NewOrphanCleanupCommand() *cobra.Command {
 		Long:    orphanCommandLongDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := validateOrphanCommandInput(&o)
-			if err != nil {
+			return ExecuteOrphanCleanupCommand(cmd, &o, args)
 				return err
 			}
 			return ExecuteOrphanCleanupCommand(&o, args)
@@ -78,7 +78,7 @@ func validateOrphanCommandInput(o *OrphanCleanupOptions) error {
 	return nil
 }
 
-func ExecuteOrphanCleanupCommand(o *OrphanCleanupOptions, args []string) error {
+func ExecuteOrphanCleanupCommand(cmd *cobra.Command, o *OrphanCleanupOptions, args []string) error {
 
 	if len(o.Namespace) == 0 {
 		namespace, err := kubernetes.Namespace()
@@ -161,14 +161,15 @@ func ExecuteOrphanCleanupCommand(o *OrphanCleanupOptions, args []string) error {
 	log.WithField("inactiveImageTags", inactiveImageTags).Info("Tags for deletion")
 
 	if o.Force {
-		for _, inactiveTag := range inactiveImageTags {
+		DeleteImages(inactiveImageTags, imageName, namespace)
 			err:= openshift.DeleteImageStreamTag(o.Namespace, openshift.BuildImageStreamTagName(o.ImageStream, inactiveTag))
 			if err == nil {
 				log.WithField("imageTag", inactiveTag).Info("Deleted image tag")
-			} else {
-				log.WithError(err).WithField("imageTag", inactiveTag).Error("Could not delete image")
-			}
-		}
+	} else {
+		log.Info("--force was not specified. Nothing has been deleted.")
+	}
+	return nil
+}
 	} else {
 		log.Info("--force was not specified. Nothing has been deleted.")
 	}

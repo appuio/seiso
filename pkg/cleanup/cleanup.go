@@ -1,12 +1,12 @@
 package cleanup
 
 import (
-	"strings"
 	"regexp"
+	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	imagev1 "github.com/openshift/api/image/v1"
+	log "github.com/sirupsen/logrus"
 )
 
 // MatchOption type defines how the tags should be matched
@@ -93,7 +93,7 @@ func FilterByRegex(imageTags *[]string, regexp *regexp.Regexp) []string {
 	var matchedTags []string
 
 	log.WithField("pattern:", regexp).Debug("Filtering image tags with regex...")
-	
+
 	for _, tag := range *imageTags {
 		imageTagMatched := regexp.MatchString(tag)
 		log.WithField("imageTag:", tag).WithField("match:", imageTagMatched).Debug("Matching image tag")
