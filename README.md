@@ -2,7 +2,7 @@
 
 [![dockeri.co](https://dockeri.co/image/appuio/image-cleanup)](https://hub.docker.com/r/appuio/image-cleanup)
 
-![](https://img.shields.io/github/workflow/status/appuio/image-cleanup/Release)
+![](https://img.shields.io/github/workflow/status/appuio/image-cleanup/Build)
 ![](https://img.shields.io/github/v/release/appuio/image-cleanup?include_prereleases)
 ![](https://img.shields.io/github/issues-raw/appuio/image-cleanup)
 ![](https://img.shields.io/github/issues-pr-raw/appuio/image-cleanup)
