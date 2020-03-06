@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	imageRepositoryCliFlag = "image-repository"
+)
+
 func DeleteImages(imageTags []string, imageName string, namespace string) {
 	for _, inactiveTag := range imageTags {
 		err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag))

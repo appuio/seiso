@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"github.com/appuio/image-cleanup/pkg/cleanup"
 	"github.com/appuio/image-cleanup/pkg/git"
 	"github.com/appuio/image-cleanup/pkg/openshift"
@@ -28,7 +29,6 @@ type OrphanCleanupOptions struct {
 const (
 	orphanCommandLongDescription = `Sometimes images get tagged manually or by branches or force-pushed commits that do not exist anymore.
 This command deletes images that are not found in the git history.`
-	imageRepositoryCliFlag       = "image-repository"
 	orphanDeletionPatternCliFlag = "orphan-deletion-pattern"
 	orphanOlderThanCliFlag       = "older-than"
 )
@@ -54,7 +54,8 @@ func NewOrphanCleanupCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&o.ImageRepository, imageRepositoryCliFlag, "i", "", "Image repository (e.g. namespace/repo)")
 	cmd.Flags().BoolVarP(&o.Tag, "tags", "t", false,
 		"Instead of comparing commit history, it will compare git tags with the existing image tags, removing any image tags that do not match")
-	cmd.Flags().StringVar(&o.SortCriteria, "sort", string(git.SortOptionVersion), "sort tags by criteria. Allowed values: [version, alphabetical]")
+	cmd.Flags().StringVar(&o.SortCriteria, "sort", string(git.SortOptionVersion),
+		fmt.Sprintf("Sort git tags by criteria. Only effective with --tags. Allowed values: [%s, %s]", git.SortOptionVersion, git.SortOptionAlphabetic))
 	cmd.Flags().StringVar(&o.OlderThan, orphanOlderThanCliFlag, "2mo",
 		"delete images that are older than the duration. Ex.: [1y2mo3w4d5h6m7s]")
 	cmd.Flags().StringVarP(&o.OrphanDeletionRegex, orphanDeletionPatternCliFlag, "r", "^[a-z0-9]{40}$",
@@ -125,7 +126,7 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, o *OrphanCleanupOptions, ar
 		log.WithError(err).
 			WithFields(log.Fields{
 				"ImageRepository": o.ImageRepository,
-				"ImageStream":     imageName,
+				"ImageName":       imageName,
 				"imageStreamTags": imageStreamTags}).
 			Fatal("Could not retrieve active image stream tags.")
 	}
