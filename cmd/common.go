@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/appuio/image-cleanup/pkg/git"
 	"github.com/appuio/image-cleanup/pkg/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -19,6 +18,9 @@ type (
 		Tag          bool
 		SortCriteria string
 	}
+)
+var (
+	gitOptions = GitOptions{}
 )
 
 func DeleteImages(imageTags []string, imageName string, namespace string) {
@@ -46,22 +48,3 @@ func PrintImageTags(cmd *cobra.Command, imageTags []string) {
 	}
 }
 
-func getGitCandidateList(o *GitOptions) []string {
-	logEvent := log.WithFields(log.Fields{
-		"GitRepoPath": o.RepoPath,
-		"CommitLimit": o.CommitLimit,
-	})
-	if o.Tag {
-		candidates, err := git.GetTags(o.RepoPath, o.CommitLimit, git.SortOption(o.SortCriteria))
-		if err != nil {
-			logEvent.WithError(err).Fatal("Retrieving commit tags failed.")
-		}
-		return candidates
-	} else {
-		candidates, err := git.GetCommitHashes(o.RepoPath, o.CommitLimit)
-		if err != nil {
-			logEvent.WithError(err).Fatal("Retrieving commit hashes failed.")
-		}
-		return candidates
-	}
-}
