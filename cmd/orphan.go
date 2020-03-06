@@ -17,11 +17,7 @@ import (
 // OrphanCleanupOptions holds the user-defined settings
 type OrphanCleanupOptions struct {
 	Force               bool
-	CommitLimit         int
-	GitRepoPath         string
 	ImageRepository     string
-	Tag                 bool
-	SortCriteria        string
 	OlderThan           string
 	OrphanDeletionRegex string
 }
@@ -37,24 +33,25 @@ This command deletes images that are not found in the git history.`
 // image tags that are not found in the git history by given criteria.
 func NewOrphanCleanupCommand() *cobra.Command {
 	o := OrphanCleanupOptions{}
+	gitOptions := GitOptions{}
 	cmd := &cobra.Command{
 		Use:     "orphans",
 		Aliases: []string{"orph"},
 		Short:   "Clean up unknown image tags",
 		Long:    orphanCommandLongDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			validateOrphanCommandInput(&o)
+			validateOrphanCommandInput(&o, &gitOptions)
 			return ExecuteOrphanCleanupCommand(cmd, &o, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&o.Force, "force", "f", false, "Confirm deletion of image tags.")
-	cmd.Flags().IntVarP(&o.CommitLimit, "git-commit-limit", "l", 0,
+	cmd.Flags().IntVarP(&gitOptions.CommitLimit, "git-commit-limit", "l", 0,
 		"Only look at the first <l> commits to compare with tags. Use 0 (zero) for all commits. Limited effect if repo is a shallow clone.")
-	cmd.Flags().StringVarP(&o.GitRepoPath, "git-repo-path", "p", ".", "Path to Git repository")
+	cmd.Flags().StringVarP(&gitOptions.RepoPath, "git-repo-path", "p", ".", "Path to Git repository")
 	cmd.Flags().StringVarP(&o.ImageRepository, imageRepositoryCliFlag, "i", "", "Image repository (e.g. namespace/repo)")
-	cmd.Flags().BoolVarP(&o.Tag, "tags", "t", false,
+	cmd.Flags().BoolVarP(&gitOptions.Tag, "tags", "t", false,
 		"Instead of comparing commit history, it will compare git tags with the existing image tags, removing any image tags that do not match")
-	cmd.Flags().StringVar(&o.SortCriteria, "sort", string(git.SortOptionVersion),
+	cmd.Flags().StringVar(&gitOptions.SortCriteria, "sort", string(git.SortOptionVersion),
 		fmt.Sprintf("Sort git tags by criteria. Only effective with --tags. Allowed values: [%s, %s]", git.SortOptionVersion, git.SortOptionAlphabetic))
 	cmd.Flags().StringVar(&o.OlderThan, orphanOlderThanCliFlag, "2mo",
 		"delete images that are older than the duration. Ex.: [1y2mo3w4d5h6m7s]")
@@ -64,7 +61,7 @@ func NewOrphanCleanupCommand() *cobra.Command {
 	return cmd
 }
 
-func validateOrphanCommandInput(o *OrphanCleanupOptions) {
+func validateOrphanCommandInput(o *OrphanCleanupOptions, gitOptions *GitOptions) {
 
 	if _, _, err := splitNamespaceAndImagestream(o.ImageRepository); err != nil {
 		log.WithError(err).
@@ -84,18 +81,18 @@ func validateOrphanCommandInput(o *OrphanCleanupOptions) {
 			Fatal("Could not parse cut off date.")
 	}
 
-	if o.Tag && !git.IsValidSortValue(o.SortCriteria) {
+	if gitOptions.Tag && !git.IsValidSortValue(gitOptions.SortCriteria) {
 		log.WithFields(log.Fields{
 			"error": "invalid sort criteria",
-			"sort":  o.SortCriteria,
+			"sort":  gitOptions.SortCriteria,
 		}).Fatal("Could not parse sort criteria.")
 	}
 
 }
 
-func ExecuteOrphanCleanupCommand(cmd *cobra.Command, o *OrphanCleanupOptions, args []string) error {
+func ExecuteOrphanCleanupCommand(cmd *cobra.Command, o *OrphanCleanupOptions, gitOptions *GitOptions, args []string) error {
 
-	gitCandidates := getGitCandidateList(o)
+	gitCandidates := getGitCandidateList(gitOptions)
 
 	namespace, imageName, err := splitNamespaceAndImagestream(o.ImageRepository)
 
@@ -112,7 +109,7 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, o *OrphanCleanupOptions, ar
 	imageStreamTags := cleanup.FilterImageTagsByTime(&imageStreamObjectTags, cutOffDateTime)
 
 	var matchOption cleanup.MatchOption
-	if o.Tag {
+	if gitOptions.Tag {
 		matchOption = cleanup.MatchOptionExact
 	}
 
@@ -142,26 +139,6 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, o *OrphanCleanupOptions, ar
 		log.Info("--force was not specified. Nothing has been deleted.")
 	}
 	return nil
-}
-
-func getGitCandidateList(o *OrphanCleanupOptions) []string {
-	logEvent := log.WithFields(log.Fields{
-		"GitRepoPath": o.GitRepoPath,
-		"CommitLimit": o.CommitLimit,
-	})
-	if o.Tag {
-		candidates, err := git.GetTags(o.GitRepoPath, o.CommitLimit, git.SortOption(o.SortCriteria))
-		if err != nil {
-			logEvent.WithError(err).Fatal("Retrieving commit tags failed.")
-		}
-		return candidates
-	} else {
-		candidates, err := git.GetCommitHashes(o.GitRepoPath, o.CommitLimit)
-		if err != nil {
-			logEvent.WithError(err).Fatal("Retrieving commit hashes failed.")
-		}
-		return candidates
-	}
 }
 
 func parseOrphanDeletionRegex(orphanIncludeRegex string) (*regexp.Regexp, error) {

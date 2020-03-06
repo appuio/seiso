@@ -12,65 +12,39 @@ import (
 // HistoryCleanupOptions is a struct to support the cleanup command
 type HistoryCleanupOptions struct {
 	Force           bool
-	CommitLimit     int
-	RepoPath        string
 	Keep            int
 	ImageRepository string
 	Namespace       string
-	Tag             bool
-	SortCriteria    string
 }
 
 // NewHistoryCleanupCommand creates a cobra command to clean up images by comparing the git commit history.
 func NewHistoryCleanupCommand() *cobra.Command {
-	o := HistoryCleanupOptions{}
+	historyCleanupOptions := HistoryCleanupOptions{}
+	gitOptions := GitOptions{}
 	cmd := &cobra.Command{
 		Use:     "history",
 		Aliases: []string{"hist"},
 		Short:   "Clean up excessive image tags",
 		Long:    `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
 		Run: func(cmd *cobra.Command, args []string) {
-			validateFlagCombinationInput(&o)
-			ExecuteHistoryCleanupCommand(cmd, &o, args)
+			validateFlagCombinationInput(&gitOptions)
+			ExecuteHistoryCleanupCommand(cmd, &historyCleanupOptions, &gitOptions, args)
 		},
 	}
-	cmd.Flags().BoolVarP(&o.Force, "force", "f", false, "Confirm deletion of image tags.")
-	cmd.Flags().IntVarP(&o.CommitLimit, "git-commit-limit", "l", 0,
+	cmd.Flags().BoolVarP(&historyCleanupOptions.Force, "force", "f", false, "Confirm deletion of image tags.")
+	cmd.Flags().IntVarP(&gitOptions.CommitLimit, "git-commit-limit", "l", 0,
 		"Only look at the first <l> commits to compare with image tags. Use 0 (zero) for all commits. Limited effect if repo is a shallow clone.")
-	cmd.Flags().StringVarP(&o.RepoPath, "git-repo-path", "p", ".", "Path to Git repository.")
-	cmd.Flags().StringVarP(&o.ImageRepository, imageRepositoryCliFlag, "i", "", "Image repository in form of <namespace/repo>.")
-	cmd.Flags().IntVarP(&o.Keep, "keep", "k", 10, "Keep most current <k> images.")
-	cmd.Flags().BoolVarP(&o.Tag, "tags", "t", false, "Compare with Git tags instead of commit hashes.")
-	cmd.Flags().StringVar(&o.SortCriteria, "sort", string(git.SortOptionVersion),
+	cmd.Flags().StringVarP(&gitOptions.RepoPath, "git-repo-path", "p", ".", "Path to Git repository.")
+	cmd.Flags().StringVarP(&historyCleanupOptions.ImageRepository, imageRepositoryCliFlag, "i", "", "Image repository in form of <namespace/repo>.")
+	cmd.Flags().IntVarP(&historyCleanupOptions.Keep, "keep", "k", 10, "Keep most current <k> images.")
+	cmd.Flags().BoolVarP(&gitOptions.Tag, "tags", "t", false, "Compare with Git tags instead of commit hashes.")
+	cmd.Flags().StringVar(&gitOptions.SortCriteria, "sort", string(git.SortOptionVersion),
 		fmt.Sprintf("Sort git tags by criteria. Only effective with --tags. Allowed values: %s", []git.SortOption{git.SortOptionVersion, git.SortOptionAlphabetic}))
 	cmd.MarkFlagRequired("image-repository")
 	return cmd
 }
 
-func ExecuteHistoryCleanupCommand(cmd *cobra.Command, o *HistoryCleanupOptions, args []string) {
-
-	var matchValues []string
-	if o.Tag {
-		var err error
-		matchValues, err = git.GetTags(o.RepoPath, o.CommitLimit, git.SortOption(o.SortCriteria))
-		if err != nil {
-			log.WithError(err).
-				WithFields(log.Fields{
-					"RepoPath":    o.RepoPath,
-					"CommitLimit": o.CommitLimit}).
-				Fatal("Retrieving commit tags failed.")
-		}
-	} else {
-		var err error
-		matchValues, err = git.GetCommitHashes(o.RepoPath, o.CommitLimit)
-		if err != nil {
-			log.WithError(err).
-				WithFields(log.Fields{
-					"RepoPath":    o.RepoPath,
-					"CommitLimit": o.CommitLimit}).
-				Fatal("Retrieving commit hashes failed.")
-		}
-	}
+func ExecuteHistoryCleanupCommand(cmd *cobra.Command, o *HistoryCleanupOptions, gitOptions *GitOptions, args []string) {
 
 	imageStreamObjectTags, err := openshift.GetImageStreamTags(o.Namespace, o.ImageRepository)
 	if err != nil {
@@ -87,11 +61,12 @@ func ExecuteHistoryCleanupCommand(cmd *cobra.Command, o *HistoryCleanupOptions, 
 	}
 
 	var matchOption cleanup.MatchOption
-	if o.Tag {
+	if gitOptions.Tag {
 		matchOption = cleanup.MatchOptionExact
 	}
 
-	var matchingTags = cleanup.GetMatchingTags(&matchValues, &imageStreamTags, matchOption)
+	gitCandidates := getGitCandidateList(gitOptions)
+	var matchingTags = cleanup.GetMatchingTags(&gitCandidates, &imageStreamTags, matchOption)
 
 	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(o.Namespace, o.ImageRepository, imageStreamTags)
 	if err != nil {
@@ -107,7 +82,7 @@ func ExecuteHistoryCleanupCommand(cmd *cobra.Command, o *HistoryCleanupOptions, 
 
 	inactiveTags = cleanup.LimitTags(&inactiveTags, o.Keep)
 
-	log.WithField("inactiveTags", inactiveTags).Info("Compiled list of image tags to delete.")
+	PrintImageTags(cmd, inactiveTags)
 
 	if o.Force {
 		DeleteImages(inactiveTags, o.ImageRepository, o.Namespace)
@@ -116,10 +91,10 @@ func ExecuteHistoryCleanupCommand(cmd *cobra.Command, o *HistoryCleanupOptions, 
 	}
 }
 
-func validateFlagCombinationInput(o *HistoryCleanupOptions) {
+func validateFlagCombinationInput(gitOptions *GitOptions) {
 
-	if o.Tag && !git.IsValidSortValue(o.SortCriteria) {
-		log.WithField("sort_criteria", o.SortCriteria).Fatal("Invalid sort criteria.")
+	if gitOptions.Tag && !git.IsValidSortValue(gitOptions.SortCriteria) {
+		log.WithField("sort_criteria", gitOptions.SortCriteria).Fatal("Invalid sort criteria.")
 	}
 
 }
