@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/appuio/image-cleanup/pkg/openshift"
+	"github.com/appuio/image-cleanup/git"
+	"github.com/appuio/image-cleanup/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -11,16 +12,8 @@ const (
 	imageRepositoryCliFlag = "image-repository"
 )
 
-type (
-	GitOptions struct {
-		CommitLimit  int
-		RepoPath     string
-		Tag          bool
-		SortCriteria string
-	}
-)
 var (
-	gitOptions = GitOptions{}
+	gitOptions = git.GitOptions{}
 )
 
 func DeleteImages(imageTags []string, imageName string, namespace string) {
@@ -43,7 +36,7 @@ func PrintImageTags(cmd *cobra.Command, imageTags []string) {
 		}
 	} else {
 		for _, tag := range imageTags {
-			log.WithField("image_tag", tag).Info("image tag candidate")
+			log.WithField("imageTag", tag).Info("Found image tag candidate.")
 		}
 	}
 }

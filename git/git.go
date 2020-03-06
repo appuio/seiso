@@ -1,12 +1,20 @@
 package git
 
 import (
-	"github.com/appuio/image-cleanup/cmd"
 	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4"
+)
+
+type (
+	GitOptions struct {
+		CommitLimit  int
+		RepoPath     string
+		Tag          bool
+		SortCriteria string
+	}
 )
 
 // GetCommitHashes returns the commit hashes of a given repository ordered by the `git.LogOrderCommitterTime`. If `commitLimit` is 0 all commits will be returned.
@@ -72,7 +80,7 @@ func GetTags(repoPath string, tagLimit int, sortTagBy SortOption) ([]string, err
 	return sortTags(commitTags, sortTagBy)
 }
 
-func GetGitCandidateList(o *cmd.GitOptions) []string {
+func GetGitCandidateList(o *GitOptions) []string {
 	logEvent := logrus.WithFields(logrus.Fields{
 		"GitRepoPath": o.RepoPath,
 		"CommitLimit": o.CommitLimit,

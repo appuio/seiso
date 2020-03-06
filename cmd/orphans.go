@@ -3,9 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/appuio/image-cleanup/pkg/cleanup"
-	"github.com/appuio/image-cleanup/pkg/git"
-	"github.com/appuio/image-cleanup/pkg/openshift"
+	"github.com/appuio/image-cleanup/cleanup"
+	"github.com/appuio/image-cleanup/git"
+	"github.com/appuio/image-cleanup/openshift"
 	"github.com/karrick/tparse"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -38,9 +38,9 @@ var (
 		Short:   "Clean up unknown image tags",
 		Long:    orphanCommandLongDescription,
 		Aliases: []string{"orph"},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			validateOrphanCommandInput()
-			return ExecuteOrphanCleanupCommand(cmd, args)
+			ExecuteOrphanCleanupCommand(cmd, args)
 		},
 	}
 )
@@ -94,7 +94,7 @@ func validateOrphanCommandInput() {
 
 }
 
-func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
+func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) {
 
 	gitCandidates := git.GetGitCandidateList(&gitOptions)
 
@@ -132,7 +132,7 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
 			Fatal("Could not retrieve active image stream tags.")
 	}
 
-	log.WithField("activeTags", activeImageStreamTags).Debug("Currently found active image tags")
+	log.WithField("activeTags", activeImageStreamTags).Debug("Found currently active image tags")
 	inactiveImageTags := cleanup.GetInactiveImageTags(&activeImageStreamTags, &matchingTags)
 
 	PrintImageTags(cmd, inactiveImageTags)
@@ -142,7 +142,6 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
 	} else {
 		log.Info("--force was not specified. Nothing has been deleted.")
 	}
-	return nil
 }
 
 func parseOrphanDeletionRegex(orphanIncludeRegex string) (*regexp.Regexp, error) {

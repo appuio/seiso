@@ -1,7 +1,7 @@
 package openshift
 
 import (
-	"github.com/appuio/image-cleanup/pkg/kubernetes"
+	"github.com/appuio/image-cleanup/kubernetes"
 	image "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
 )
 

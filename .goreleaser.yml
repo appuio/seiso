@@ -2,7 +2,8 @@
 
 before:
   hooks:
-  - go test ./...
+  - go vet ./...
+  - go test --cover ./...
 
 builds:
 - env:

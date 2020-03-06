@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/appuio/image-cleanup/pkg/cleanup"
-	"github.com/appuio/image-cleanup/pkg/git"
-	"github.com/appuio/image-cleanup/pkg/openshift"
+	"github.com/appuio/image-cleanup/cleanup"
+	"github.com/appuio/image-cleanup/git"
+	"github.com/appuio/image-cleanup/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
