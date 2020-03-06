@@ -42,18 +42,15 @@ func GetMatchingTags(values, tags *[]string, matchOption MatchOption) []string {
 }
 
 // GetInactiveImageTags returns the tags without active tags (unsorted)
-func GetInactiveImageTags(activeTags, tags *[]string) []string {
+func GetInactiveImageTags(activeTags, allImageTags *[]string) []string {
 	var inactiveTags []string
 
-	log.WithField("activeTags", activeTags).Debug("Active tags")
-	log.WithField("tags", tags).Debug("Tags")
-
-	for _, tag := range *tags {
+	for _, tag := range *allImageTags {
 		active := false
 		for _, activeTag := range *activeTags {
 			if tag == activeTag {
 				active = true
-				log.WithField("tag", tag).Debug("The tag is part of the active tags")
+				log.WithField("tag", tag).Debug("The image is currently active in a deployment")
 				break
 			}
 		}

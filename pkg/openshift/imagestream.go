@@ -9,13 +9,14 @@ import (
 
 var (
 	resources = []schema.GroupVersionResource{
-		schema.GroupVersionResource{Version: "v1", Resource: "pods"},
-		schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"},
-		schema.GroupVersionResource{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"},
-		schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
-		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "daemonsets"},
-		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "deployments"},
-		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "replicasets"},
+		{Version: "v1", Resource: "pods"},
+		{Group: "apps", Version: "v1", Resource: "statefulsets"},
+		{Group: "apps", Version: "v1", Resource: "deployments"},
+		{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"},
+		{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
+		{Group: "extensions", Version: "v1beta1", Resource: "daemonsets"},
+		{Group: "extensions", Version: "v1beta1", Resource: "deployments"},
+		{Group: "extensions", Version: "v1beta1", Resource: "replicasets"},
 	}
 )
 
