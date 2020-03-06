@@ -37,8 +37,9 @@ changelog:
   sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
+    - '^Docs:'
+    - '^Test:'
+    - '^Refactor:'
 
 release:
   github:
