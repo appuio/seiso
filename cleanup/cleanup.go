@@ -64,7 +64,7 @@ func GetInactiveImageTags(activeTags, allImageTags *[]string) []string {
 
 // GetOrphanImageTags returns the tags that do not have any git commit match
 func GetOrphanImageTags(gitValues, imageTags *[]string, matchOption MatchOption) []string {
-	orphans := []string{}
+	var orphans []string
 
 	log.WithField("gitValues", gitValues).Debug("Git commits/tags")
 	log.WithField("imageTags", imageTags).Debug("Image stream tags")
