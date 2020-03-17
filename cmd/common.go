@@ -22,8 +22,8 @@ func DeleteImages(imageTags []string, imageName string, namespace string) {
 
 // PrintImageTags prints the given image tags line by line. In batch mode, only the tag name is printed, otherwise default
 // log with info level
-func PrintImageTags(cmd *cobra.Command, imageTags []string) {
-	if cmd.Parent().PersistentFlags().Lookup("batch").Value.String() == "true" {
+func PrintImageTags(imageTags []string) {
+	if config.Log.Batch {
 		for _, tag := range imageTags {
 			fmt.Println(tag)
 		}
@@ -34,11 +34,13 @@ func PrintImageTags(cmd *cobra.Command, imageTags []string) {
 	}
 }
 
+// addCommonFlagsForGit sets up the force flag, as well as the common git flags. Adding the flags to the root cmd would make those
+// global, even for commands that do not need them, which might be overkill.
 func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 	cmd.PersistentFlags().BoolP("force", "f", defaults.Force, "Confirm deletion of image tags.")
-	cmd.PersistentFlags().IntP("git-commit-limit", "l", defaults.Git.CommitLimit,
+	cmd.PersistentFlags().IntP("commit-limit", "l", defaults.Git.CommitLimit,
 		"Only look at the first <l> commits to compare with tags. Use 0 (zero) for all commits. Limited effect if repo is a shallow clone.")
-	cmd.PersistentFlags().StringP("git-repo-path", "p", defaults.Git.RepoPath, "Path to Git repository")
+	cmd.PersistentFlags().StringP("repo-path", "p", defaults.Git.RepoPath, "Path to Git repository")
 	cmd.PersistentFlags().BoolP("tags", "t", defaults.Git.Tag,
 		"Instead of comparing commit history, it will compare git tags with the existing image tags, removing any image tags that do not match")
 	cmd.PersistentFlags().String("sort", defaults.Git.SortCriteria,

@@ -3,28 +3,27 @@ package cfg
 type (
 	// Configuration holds a strongly-typed tree of the configuration
 	Configuration struct {
-		Git     GitConfig
-		History HistoryConfig
-		Orphan  OrphanConfig
+		Git     GitConfig     `mapstructure:",squash"`
+		History HistoryConfig `mapstructure:",squash"`
+		Orphan  OrphanConfig  `mapstructure:",squash"`
 		Log     LogConfig
 		Force   bool
 	}
 	// GitConfig configures git repository
 	GitConfig struct {
-		CommitLimit  int
-		RepoPath     string
-		Tag          bool
-		SortCriteria string
+		CommitLimit  int    `mapstructure:"commit-limit"`
+		RepoPath     string `mapstructure:"repo-path"`
+		Tag          bool   `mapstructure:"tags"`
+		SortCriteria string `mapstructure:"sort"`
 	}
 	// HistoryConfig configures the history command behaviour
 	HistoryConfig struct {
-		ImageRepository string
-		Keep            int
+		Keep int
 	}
 	// OrphanConfig configures the orphans command behaviour
 	OrphanConfig struct {
-		OlderThan           string
-		OrphanDeletionRegex string
+		OlderThan           string `mapstructure:"older-than"`
+		OrphanDeletionRegex string `mapstructure:"deletion-pattern"`
 	}
 	LogConfig struct {
 		LogLevel string
@@ -33,6 +32,7 @@ type (
 	}
 )
 
+// NewDefaultConfig retrieves the hardcoded configs with sane defaults
 func NewDefaultConfig() *Configuration {
 	return &Configuration{
 		Git: GitConfig{

@@ -16,12 +16,12 @@ var (
 		Aliases: []string{"hist"},
 		Short:   "Clean up excessive image tags",
 		Long:    `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
-		Args: cobra.MinimumNArgs(1),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err:= validateHistoryCommandInput(args); err != nil {
+			if err := validateHistoryCommandInput(args); err != nil {
 				return err
 			}
-			ExecuteHistoryCleanupCommand(cmd, args)
+			ExecuteHistoryCleanupCommand(args)
 			return nil
 		},
 	}
@@ -33,6 +33,8 @@ func init() {
 
 	addCommonFlagsForGit(historyCmd, defaults)
 	historyCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep, "Keep most current <k> images.")
+
+	bindFlags(historyCmd.PersistentFlags())
 
 }
 
@@ -46,11 +48,10 @@ func validateHistoryCommandInput(args []string) error {
 	return nil
 }
 
-func ExecuteHistoryCleanupCommand(cmd *cobra.Command, args []string) {
+func ExecuteHistoryCleanupCommand(args []string) {
 
 	c := config.History
-	c.ImageRepository = args[0]
-	namespace, image, _ := splitNamespaceAndImagestream(c.ImageRepository)
+	namespace, image, _ := splitNamespaceAndImagestream(args[0])
 
 	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, image)
 	if err != nil {
@@ -88,7 +89,7 @@ func ExecuteHistoryCleanupCommand(cmd *cobra.Command, args []string) {
 	inactiveTags := cleanup.GetInactiveImageTags(&activeImageStreamTags, &matchingTags)
 	inactiveTags = cleanup.LimitTags(&inactiveTags, c.Keep)
 
-	PrintImageTags(cmd, inactiveTags)
+	PrintImageTags(inactiveTags)
 
 	if config.Force {
 		DeleteImages(inactiveTags, image, namespace)

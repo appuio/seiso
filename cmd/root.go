@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/appuio/image-cleanup/cfg"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
@@ -16,6 +16,9 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "image-cleanup",
 		Short: "Cleans up images tags on remote registries",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			log.WithField("config", config).Debug("Parsed configuration.")
+		},
 	}
 	config = cfg.NewDefaultConfig()
 )
@@ -24,26 +27,23 @@ var (
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.WithError(err).Fatal("Command aborted")
 	}
 }
 
 func init() {
 	defaults := cfg.NewDefaultConfig()
-	rootCmd.PersistentFlags().String("logLevel", defaults.Log.LogLevel, "Log level to use")
-	rootCmd.PersistentFlags().BoolP("verbose", "v", defaults.Log.Verbose, "Shorthand for --logLevel debug")
-	rootCmd.PersistentFlags().BoolP("batch", "b", defaults.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
-	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().String("log.level", defaults.Log.LogLevel, "Log level, one of [debug info warn error fatal]")
+	rootCmd.PersistentFlags().BoolP("log.verbose", "v", defaults.Log.Verbose, "Shorthand for --log.level debug")
+	rootCmd.PersistentFlags().BoolP("log.batch", "b", defaults.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
+	cobra.OnInitialize(initRootConfig)
 
 }
 
-// initConfig reads in cfg file and ENV variables if set.
-func initConfig() {
+// initRootConfig reads in cfg file and ENV variables if set.
+func initRootConfig() {
 
-	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
-		log.WithError(err).Fatal("Could not bind flags.")
-	}
+	bindFlags(rootCmd.Flags())
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
 
@@ -70,6 +70,12 @@ func initConfig() {
 		} else {
 			log.SetLevel(level)
 		}
+	}
+}
+
+func bindFlags(flagSet *pflag.FlagSet) {
+	if err := viper.BindPFlags(flagSet); err != nil {
+		log.WithError(err).Fatal("Could not bind flags")
 	}
 }
 

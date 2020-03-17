@@ -18,7 +18,7 @@ import (
 const (
 	orphanCommandLongDescription = `Sometimes images get tagged manually or by branches or force-pushed commits that do not exist anymore.
 This command deletes images that are not found in the git history.`
-	orphanDeletionPatternCliFlag = "orphan-deletion-pattern"
+	orphanDeletionPatternCliFlag = "deletion-pattern"
 	orphanOlderThanCliFlag       = "older-than"
 )
 
@@ -35,8 +35,7 @@ var (
 			if err := validateOrphanCommandInput(args); err != nil {
 				return err
 			}
-			ExecuteOrphanCleanupCommand(cmd, args)
-			return nil
+			return ExecuteOrphanCleanupCommand(args)
 		},
 	}
 )
@@ -51,6 +50,7 @@ func init() {
 	orphanCmd.PersistentFlags().StringP(orphanDeletionPatternCliFlag, "r", defaults.Orphan.OrphanDeletionRegex,
 		"Delete images that match the regex, defaults to matching Git SHA commits")
 
+	bindFlags(orphanCmd.PersistentFlags())
 }
 
 func validateOrphanCommandInput(args []string) error {
@@ -73,56 +73,41 @@ func validateOrphanCommandInput(args []string) error {
 	return nil
 }
 
-func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) {
-
-	gitCandidates := git.GetGitCandidateList(&config.Git)
+func ExecuteOrphanCleanupCommand(args []string) error {
 
 	o := config.Orphan
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
-	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, imageName)
+	allImageTags, err := openshift.GetImageStreamTags(namespace, imageName)
 	if err != nil {
-		log.WithError(err).
-			WithFields(log.Fields{
-				"ImageRepository": namespace,
-				"ImageName":       imageName,
-			}).
-			Fatal("Could not retrieve image stream.")
+		return fmt.Errorf("could not retrieve image stream '%v/%v': %w", namespace, imageName, err)
 	}
 
 	cutOffDateTime, _ := parseCutOffDateTime(o.OlderThan)
-	imageStreamTags := cleanup.FilterImageTagsByTime(&imageStreamObjectTags, cutOffDateTime)
+	orphanIncludeRegex, _ := parseOrphanDeletionRegex(o.OrphanDeletionRegex)
 
 	matchOption := cleanup.MatchOptionDefault
 	if config.Git.Tag {
 		matchOption = cleanup.MatchOptionExact
 	}
 
-	orphanIncludeRegex, _ := parseOrphanDeletionRegex(o.OrphanDeletionRegex)
-	var matchingTags []string
-	matchingTags = cleanup.GetOrphanImageTags(&gitCandidates, &imageStreamTags, matchOption)
-	matchingTags = cleanup.FilterByRegex(&imageStreamTags, orphanIncludeRegex)
-
-	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, imageName, imageStreamTags)
+	gitCandidates := git.GetGitCandidateList(&config.Git)
+	imageTagList := cleanup.FilterImageTagsByTime(&allImageTags, cutOffDateTime)
+	imageTagList = cleanup.FilterOrphanImageTags(&gitCandidates, &imageTagList, matchOption)
+	imageTagList = cleanup.FilterByRegex(&imageTagList, orphanIncludeRegex)
+	imageTagList, err = cleanup.FilterActiveImageTags(namespace, imageName, imageTagList, &imageTagList)
 	if err != nil {
-		log.WithError(err).
-			WithFields(log.Fields{
-				"ImageRepository": namespace,
-				"ImageName":       imageName,
-				"imageStreamTags": imageStreamTags}).
-			Fatal("Could not retrieve active image stream tags.")
+		return err
 	}
 
-	log.WithField("activeTags", activeImageStreamTags).Debug("Found currently active image tags")
-	inactiveImageTags := cleanup.GetInactiveImageTags(&activeImageStreamTags, &matchingTags)
-
-	PrintImageTags(cmd, inactiveImageTags)
+	PrintImageTags(imageTagList)
 
 	if config.Force {
-		DeleteImages(inactiveImageTags, imageName, namespace)
+		DeleteImages(imageTagList, imageName, namespace)
 	} else {
 		log.Info("--force was not specified. Nothing has been deleted.")
 	}
+	return nil
 }
 
 func parseOrphanDeletionRegex(orphanIncludeRegex string) (*regexp.Regexp, error) {

@@ -13,8 +13,10 @@ require (
 	github.com/openshift/client-go v0.0.0-20180830153425-431ec9a26e50
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.6
+	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.5.1
+	github.com/thoas/go-funk v0.6.0
 	golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582 // indirect
 	golang.org/x/sys v0.0.0-20191018095205-727590c5006e // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect

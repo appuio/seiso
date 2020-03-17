@@ -159,7 +159,7 @@ func Test_GetOrphanTags(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		assert.Equal(t, testcase.expected, GetOrphanImageTags(&testcase.matchValues, &testcase.tags, testcase.matchOption))
+		assert.Equal(t, testcase.expected, FilterOrphanImageTags(&testcase.matchValues, &testcase.tags, testcase.matchOption))
 	}
 }
 
@@ -321,5 +321,104 @@ func Test_TagsOlderThan(t *testing.T) {
 
 	for _, testcase := range testcases {
 		assert.Equal(t, testcase.expected, FilterImageTagsByTime(&testcase.tags, testcase.olderThan))
+	}
+}
+
+func TestGetInactiveImageTags(t *testing.T) {
+	type args struct {
+		activeTags   *[]string
+		allImageTags *[]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "ShouldFilterOut_ActiveTag",
+			args: args{
+				activeTags:   &[]string{"active"},
+				allImageTags: &[]string{"active", "inactive"},
+			},
+			want: []string{"inactive"},
+		},
+		{
+			name: "ShouldIgnore",
+			args: args{
+				activeTags:   &[]string{"active"},
+				allImageTags: &[]string{"inactive"},
+			},
+			want: []string{"inactive"},
+		},
+		{
+			name: "ShouldIgnore_NoActive",
+			args: args{
+				activeTags:   &[]string{},
+				allImageTags: &[]string{"inactive"},
+			},
+			want: []string{"inactive"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetInactiveImageTags(tt.args.activeTags, tt.args.allImageTags)
+			assert.Equal(t, tt.want, result)
+		})
+	}
+}
+
+func TestFilterOrphanImageTags(t *testing.T) {
+	type args struct {
+		gitValues   *[]string
+		imageTags   *[]string
+		matchOption MatchOption
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "ShouldNotFilterAnything_IfEmpty",
+			args: args{
+				gitValues:   &[]string{},
+				imageTags:   &[]string{"a1"},
+				matchOption: MatchOptionDefault,
+			},
+			want: []string{"a1"},
+		},
+		{
+			name: "ShouldReturn_NotFoundImageTag",
+			args: args{
+				gitValues:   &[]string{"a1", "a2", "a3"},
+				imageTags:   &[]string{"a1", "b2", "b3"},
+				matchOption: MatchOptionDefault,
+			},
+			want: []string{"b2", "b3"},
+		},
+		{
+			name: "ShouldReturn_Empty_IfNoImageOrphaned",
+			args: args{
+				gitValues:   &[]string{"a1", "a2", "a3"},
+				imageTags:   &[]string{"a1", "a2", "a3"},
+				matchOption: MatchOptionDefault,
+			},
+			want: []string{},
+		},
+		{
+			name: "ShouldReturn_Empty_IfNoImages",
+			args: args{
+				gitValues:   &[]string{"a1", "a2", "a3"},
+				imageTags:   &[]string{},
+				matchOption: MatchOptionDefault,
+			},
+			want: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FilterOrphanImageTags(tt.args.gitValues, tt.args.imageTags, tt.args.matchOption)
+			assert.Equal(t, tt.want, result)
+		})
 	}
 }
