@@ -2,7 +2,7 @@ package cleanup
 
 import (
 	"fmt"
-	"github.com/appuio/image-cleanup/openshift"
+	"github.com/appuio/image-cleanup/pkg/openshift"
 	imagev1 "github.com/openshift/api/image/v1"
 	log "github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
