@@ -42,7 +42,7 @@ func NewDefaultConfig() *Configuration {
 			SortCriteria: "version",
 		},
 		History: HistoryConfig{
-			Keep: 0,
+			Keep: 10,
 		},
 		Orphan: OrphanConfig{
 			OlderThan:           "2mo",
