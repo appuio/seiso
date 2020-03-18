@@ -49,8 +49,6 @@ func init() {
 		"Delete images that are older than the duration. Ex.: [1y2mo3w4d5h6m7s]")
 	orphanCmd.PersistentFlags().StringP(orphanDeletionPatternCliFlag, "r", defaults.Orphan.OrphanDeletionRegex,
 		"Delete images that match the regex, defaults to matching Git SHA commits")
-
-	bindFlags(orphanCmd.PersistentFlags())
 }
 
 func validateOrphanCommandInput(args []string) error {

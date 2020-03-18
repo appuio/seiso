@@ -14,11 +14,9 @@ import (
 var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
-		Use:   "image-cleanup",
-		Short: "Cleans up images tags on remote registries",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			log.WithField("config", config).Debug("Parsed configuration.")
-		},
+		Use:              "image-cleanup",
+		Short:            "Cleans up images tags on remote registries",
+		PersistentPreRun: parseConfig,
 	}
 	config = cfg.NewDefaultConfig()
 )
@@ -40,10 +38,13 @@ func init() {
 
 }
 
-// initRootConfig reads in cfg file and ENV variables if set.
 func initRootConfig() {
-
 	bindFlags(rootCmd.Flags())
+}
+
+// parseConfig reads the flags and ENV vars
+func parseConfig(cmd *cobra.Command, args []string) {
+	bindFlags(cmd.PersistentFlags())
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
 
@@ -61,16 +62,17 @@ func initRootConfig() {
 		log.SetOutput(os.Stderr)
 	}
 	if config.Log.Verbose {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		level, err := log.ParseLevel(config.Log.LogLevel)
-		if err != nil {
-			log.WithField("error", err).Warn("Using info level.")
-			log.SetLevel(log.InfoLevel)
-		} else {
-			log.SetLevel(level)
-		}
+		config.Log.LogLevel = "debug"
 	}
+	level, err := log.ParseLevel(config.Log.LogLevel)
+	if err != nil {
+		log.WithField("error", err).Warn("Using info level.")
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(level)
+	}
+
+	log.WithField("config", config).Debug("Parsed configuration.")
 }
 
 func bindFlags(flagSet *pflag.FlagSet) {

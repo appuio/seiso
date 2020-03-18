@@ -21,8 +21,7 @@ var (
 			if err := validateHistoryCommandInput(args); err != nil {
 				return err
 			}
-			ExecuteHistoryCleanupCommand(args)
-			return nil
+			return ExecuteHistoryCleanupCommand(args)
 		},
 	}
 )
@@ -32,9 +31,8 @@ func init() {
 	defaults := cfg.NewDefaultConfig()
 
 	addCommonFlagsForGit(historyCmd, defaults)
-	historyCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep, "Keep most current <k> images.")
-
-	bindFlags(historyCmd.PersistentFlags())
+	historyCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
+		"Keep most current <k> images. Does not include currently used image tags (if detected).")
 
 }
 
@@ -48,19 +46,14 @@ func validateHistoryCommandInput(args []string) error {
 	return nil
 }
 
-func ExecuteHistoryCleanupCommand(args []string) {
+func ExecuteHistoryCleanupCommand(args []string) error {
 
 	c := config.History
 	namespace, image, _ := splitNamespaceAndImagestream(args[0])
 
 	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, image)
 	if err != nil {
-		log.WithError(err).
-			WithFields(log.Fields{
-				"ImageRepository": namespace,
-				"ImageName":       image,
-			}).
-			Fatal("Could not retrieve image stream.")
+		return fmt.Errorf("could not retrive image stream '%s/%s': %w", namespace, image, err)
 	}
 
 	var imageStreamTags []string
@@ -78,12 +71,7 @@ func ExecuteHistoryCleanupCommand(args []string) {
 
 	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, image, imageStreamTags)
 	if err != nil {
-		log.WithError(err).
-			WithFields(log.Fields{
-				"ImageRepository": namespace,
-				"ImageName":       image,
-				"imageStreamTags": imageStreamTags}).
-			Fatal("Could not retrieve active image stream tags.")
+		return fmt.Errorf("could not retrieve active image stream tags for '%s/%s': %w", namespace, image, err)
 	}
 
 	inactiveTags := cleanup.GetInactiveImageTags(&activeImageStreamTags, &matchingTags)
@@ -96,4 +84,5 @@ func ExecuteHistoryCleanupCommand(args []string) {
 	} else {
 		log.Info("--force was not specified. Nothing has been deleted.")
 	}
+	return nil
 }
