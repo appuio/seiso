@@ -21,8 +21,7 @@ var (
 	config = cfg.NewDefaultConfig()
 )
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// Execute is the main entrypoint of the CLI, it executes child commands as given by the user-defined flags and arguments.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.WithError(err).Fatal("Command aborted")
@@ -30,10 +29,9 @@ func Execute() {
 }
 
 func init() {
-	defaults := cfg.NewDefaultConfig()
-	rootCmd.PersistentFlags().String("log.level", defaults.Log.LogLevel, "Log level, one of [debug info warn error fatal]")
-	rootCmd.PersistentFlags().BoolP("log.verbose", "v", defaults.Log.Verbose, "Shorthand for --log.level debug")
-	rootCmd.PersistentFlags().BoolP("log.batch", "b", defaults.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
+	rootCmd.PersistentFlags().String("log.level", config.Log.LogLevel, "Log level, one of [debug info warn error fatal]")
+	rootCmd.PersistentFlags().BoolP("log.verbose", "v", config.Log.Verbose, "Shorthand for --log.level debug")
+	rootCmd.PersistentFlags().BoolP("log.batch", "b", config.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
 	cobra.OnInitialize(initRootConfig)
 
 }

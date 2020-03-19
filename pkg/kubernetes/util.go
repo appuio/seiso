@@ -12,18 +12,18 @@ type (
 	Kubernetes interface {
 		ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error)
 	}
-	// KubernetesHelper is an implementation of the interface. (Better name? introduced for better testing support)
-	KubernetesHelper struct {
+	// kubernetesImpl is an implementation of the interface. (Better name? introduced for better testing support)
+	kubernetesImpl struct {
 		client dynamic.Interface
 	}
 )
 
 func New() Kubernetes {
-	return &KubernetesHelper{}
+	return &kubernetesImpl{}
 }
 
 // ResourceContains evaluates if a given resource contains a given string
-func (k *KubernetesHelper) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
+func (k *kubernetesImpl) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
 	err := k.initClient()
 	if err != nil {
 		return false, err
@@ -39,7 +39,7 @@ func (k *KubernetesHelper) ResourceContains(namespace, value string, resource sc
 	return false, nil
 }
 
-func (k *KubernetesHelper) initClient() error {
+func (k *kubernetesImpl) initClient() error {
 	if k.client == nil {
 		client, err := NewDynamicClient()
 		if err != nil {
