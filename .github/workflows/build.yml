@@ -3,8 +3,8 @@ name: Build
 
 on:
   push:
-    branches-ignore:
-    - master
+    branches:
+    - "*"
     tags-ignore:
     - "*"
   pull_request:
