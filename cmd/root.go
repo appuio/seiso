@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/appuio/image-cleanup/cfg"
+	"github.com/appuio/seiso/cfg"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -14,8 +14,8 @@ import (
 var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
-		Use:              "image-cleanup",
-		Short:            "Cleans up images tags on remote registries",
+		Use:              "seiso",
+		Short:            "keeps your kubernetes projects clean",
 		PersistentPreRun: parseConfig,
 	}
 	config = cfg.NewDefaultConfig()

@@ -3,10 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/appuio/image-cleanup/cfg"
-	"github.com/appuio/image-cleanup/pkg/cleanup"
-	"github.com/appuio/image-cleanup/pkg/git"
-	"github.com/appuio/image-cleanup/pkg/openshift"
+	"github.com/appuio/seiso/cfg"
+	"github.com/appuio/seiso/pkg/cleanup"
+	"github.com/appuio/seiso/pkg/git"
+	"github.com/appuio/seiso/pkg/openshift"
 	"github.com/karrick/tparse"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -41,7 +41,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(orphanCmd)
+	imagesCmd.AddCommand(orphanCmd)
 	defaults := cfg.NewDefaultConfig()
 
 	addCommonFlagsForGit(orphanCmd, defaults)

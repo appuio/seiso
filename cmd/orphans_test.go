@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/appuio/image-cleanup/cfg"
+	"github.com/appuio/seiso/cfg"
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"

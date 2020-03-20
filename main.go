@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/appuio/image-cleanup/cmd"
+	"github.com/appuio/seiso/cmd"
 	log "github.com/sirupsen/logrus"
 )
 

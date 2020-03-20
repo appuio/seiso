@@ -1,22 +1,22 @@
-# Image Cleanup Client
+# Seiso
 
-[![dockeri.co](https://dockeri.co/image/appuio/image-cleanup)](https://hub.docker.com/r/appuio/image-cleanup)
+[![dockeri.co](https://dockeri.co/image/appuio/seiso)](https://hub.docker.com/r/appuio/seiso)
 
-![](https://img.shields.io/github/workflow/status/appuio/image-cleanup/Build)
-![](https://img.shields.io/github/v/release/appuio/image-cleanup?include_prereleases)
-![](https://img.shields.io/github/issues-raw/appuio/image-cleanup)
-![](https://img.shields.io/github/issues-pr-raw/appuio/image-cleanup)
-![](https://img.shields.io/github/license/appuio/image-cleanup)
+![](https://img.shields.io/github/workflow/status/appuio/seiso/Build)
+![](https://img.shields.io/github/v/release/appuio/seiso?include_prereleases)
+![](https://img.shields.io/github/issues-raw/appuio/seiso)
+![](https://img.shields.io/github/issues-pr-raw/appuio/seiso)
+![](https://img.shields.io/github/license/appuio/seiso)
 
 ## General
 
-The image cleanup client is used to clean up container images in an image registry (currently only OpenShift image registries
+Seiso is a client that is used to clean up container images in an image registry (currently only OpenShift image registries
 are supported).
 
 The tool is intended to be used closely within an application lifecycle management (Review apps). It analyzes a git repository
 and compares the history with the target image registry, removing old and unused image tags according to customizable rules.
 
-The tool can also be used more aggressively by deleting unkown image tags too ("orphans"). See more usage examples below.
+The tool can also be used more aggressively by deleting unknown image tags too ("orphans"). See more usage examples below.
 
 This tool is opinionated in the naming of image tags, as the image tags have to follow certain naming rules for this to work.
 E.g. stick to tagging with Git SHA value: `namespace/app:a3d0df2c5060b87650df6a94a0a9600510303003` or Git Tag: `namespace/app:v1.2.3`.
@@ -28,6 +28,13 @@ The cleanup **runs in dry-mode by default**, only when the `--force` flag is spe
 This prevents accidental deletions when testing.
 
 The primary execution environments are CI/CD pipelines after image pushes, rollouts or any other sort of automated cleanup jobs.
+
+In the future, there might be more stuff to cleanup (e.g. stuck Pods, ConfigMaps, Secrets, etc.), but for now, only OpenShift
+image registries are supported.
+
+## The name
+
+seiso 清楚 : Japanese for "cleaning" (think “shine” in English): Keep the workplace free of hanging wires, grease, scraps, and waste.
 
 ## Usage
 
@@ -54,21 +61,21 @@ In all cases, it is assumed that the git repository is already checked out in th
 Let's assume target branch is `a`:
 
 ```console
-image-cleanup history namespace/app --keep 2
+seiso images history namespace/app --keep 2
 ```
 Only the image tag `a1` will be deleted (only current branch is compared).
 
 ### Example: Keep no image tags
 
 ```console
-image-cleanup history namespace/app --keep 0
+seiso images history namespace/app --keep 0
 ```
 This would delete `a1` and `a2`, but *not* `a5`, as this image is being actively used by a Pod.
 
 ### Example: Delete orphaned images
 
 ```console
-image-cleanup orphans namespace/app --older-than 7d
+seiso images orphans namespace/app --older-than 7d
 ```
 This will delete `a1`, `a2`, `b3` and `b4`, if we assume that `a5` is being actively used, and `c6` is younger than 7d
 (image tag push date, not commit date).
@@ -89,7 +96,7 @@ v1.10.1
 ```
 
 ```console
-image-cleanup history namespace/app --keep 2 --tags
+seiso images history namespace/app --keep 2 --tags
 ```
 This would delete `v1.9.3` as expected, since the `--sort` flag is `version` by default (including support for v prefix).
 If `alphabetic`, the order for semver tags is reversed (probably undesired). For date-based tags, `alphabetic` sorting
@@ -97,14 +104,14 @@ flag might be better suitable, e.g. `2020-03-17`.
 
 ## Migrate from legacy cleanup plugin
 
-Projects using the legacy `oc` cleanup plugin can be migrated to `image-cleanup` as follows
+Projects using the legacy `oc` cleanup plugin can be migrated to `seiso` as follows
 
 ```console
 oc -n "$OPENSHIFT_PROJECT" plugin cleanup "$APP_NAME" -p "$PWD" -f=y
 ```
 becomes:
 ```console
-image-cleanup history "$OPENSHIFT_PROJECT/$APP_NAME" --force
+seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --force
 ```
 
 ## Development
@@ -122,9 +129,9 @@ goreleaser --snapshot --rm-dist
 
 ### Run
 ```
-./dist/image-cleanup_linux_amd64/image-cleanup --help
+./dist/seiso_linux_amd64/seiso --help
 # or
-docker run --rm -it appuio/image-cleanup:<tag>
+docker run --rm -it appuio/seiso:<tag>
 ```
 
 ## Release

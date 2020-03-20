@@ -28,7 +28,7 @@ func Test_ObjectContains(t *testing.T) {
 			object: map[string]interface{}{
 				"apiVersion": "v1",
 				"kind":       "Pod",
-				"metadata":   map[string]interface{}{"name": "image-cleanup", "namespace": "image-cleanup-test"},
+				"metadata":   map[string]interface{}{"name": "seiso", "namespace": "seiso-test"},
 				"spec": map[string]interface{}{
 					"containers": []interface{}{map[string]interface{}{
 						"serviceAccount": "default",
