@@ -1,20 +1,34 @@
 package kubernetes
 
 import (
+	"k8s.io/client-go/dynamic"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+type (
+	Kubernetes interface {
+		ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error)
+	}
+	// kubernetesImpl is an implementation of the interface. (Better name? introduced for better testing support)
+	kubernetesImpl struct {
+		client dynamic.Interface
+	}
+)
+
+func New() Kubernetes {
+	return &kubernetesImpl{}
+}
+
 // ResourceContains evaluates if a given resource contains a given string
-func ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
-	dynamicclient, err := NewDynamicClient()
+func (k *kubernetesImpl) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
+	err := k.initClient()
 	if err != nil {
 		return false, err
 	}
-
-	objectlist, err := dynamicclient.Resource(resource).Namespace(namespace).List(metav1.ListOptions{})
+	objectlist, err := k.client.Resource(resource).Namespace(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}
@@ -23,6 +37,17 @@ func ResourceContains(namespace, value string, resource schema.GroupVersionResou
 	}
 
 	return false, nil
+}
+
+func (k *kubernetesImpl) initClient() error {
+	if k.client == nil {
+		client, err := NewDynamicClient()
+		if err != nil {
+			return err
+		}
+		k.client = client
+	}
+	return nil
 }
 
 // ObjectContains evaluates if a Kubernetes object contains a certain string

@@ -2,66 +2,47 @@ package openshift
 
 import (
 	"github.com/appuio/image-cleanup/pkg/kubernetes"
+	imagev1 "github.com/openshift/api/image/v1"
+	"github.com/thoas/go-funk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	imagev1 "github.com/openshift/api/image/v1"
 )
 
 var (
 	resources = []schema.GroupVersionResource{
-		schema.GroupVersionResource{Version: "v1", Resource: "pods"},
-		schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"},
-		schema.GroupVersionResource{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"},
-		schema.GroupVersionResource{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
-		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "daemonsets"},
-		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "deployments"},
-		schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "replicasets"},
+		{Version: "v1", Resource: "pods"},
+		{Group: "apps", Version: "v1", Resource: "statefulsets"},
+		{Group: "apps", Version: "v1", Resource: "deployments"},
+		{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"},
+		{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
+		{Group: "extensions", Version: "v1beta1", Resource: "daemonsets"},
+		{Group: "extensions", Version: "v1beta1", Resource: "deployments"},
+		{Group: "extensions", Version: "v1beta1", Resource: "replicasets"},
 	}
+	helper = kubernetes.New()
 )
 
 // GetActiveImageStreamTags retrieves the image streams tags referenced in some Kubernetes resources
-func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []string) ([]string, error) {
-	var activeImageStreamTags []string
-
-	for _, resource := range resources {
-		for _, imageStreamTag := range imageStreamTags {
+func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []string) (activeImageStreamTags []string, funcError error) {
+	funk.ForEach(resources, func(resource schema.GroupVersionResource) {
+		funk.ForEach(imageStreamTags, func(imageStreamTag string) {
+			if funk.ContainsString(activeImageStreamTags, imageStreamTag) {
+				// already marked as existing, skip this
+				return
+			}
 			image := BuildImageStreamTagName(imageStream, imageStreamTag)
-
-			contains, err := kubernetes.ResourceContains(namespace, image, resource)
+			contains, err := helper.ResourceContains(namespace, image, resource)
 			if err != nil {
-				return nil, err
+				funcError = err
+				return
 			}
 
 			if contains {
 				activeImageStreamTags = append(activeImageStreamTags, imageStreamTag)
 			}
-		}
-	}
-
-	return activeImageStreamTags, nil
-}
-
-// GetImageStreams returns the image streams for a namespace
-func GetImageStreams(namespace string) ([]string, error) {
-	var imageStreams []string
-
-	imageClient, err := NewImageV1Client()
-	if err != nil {
-		return nil, err
-	}
-
-	imageStreamList, err := imageClient.ImageStreams(namespace).List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	imageStreams = make([]string, len(imageStreamList.Items))
-
-	for i, imageStream := range imageStreamList.Items {
-		imageStreams[i] = imageStream.Name
-	}
-
-	return imageStreams, nil
+		})
+	})
+	return activeImageStreamTags, funcError
 }
 
 // GetImageStreamTags returns the tags of an image stream older than the specified time

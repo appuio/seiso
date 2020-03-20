@@ -1,22 +1,20 @@
 package main
 
 import (
-	"os"
-
+	"fmt"
 	"github.com/appuio/image-cleanup/cmd"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	version string
-	commit  string
-	date    string
+	version = "unknown"
+	commit  = "dirty"
+	date    = "today"
 )
 
 func main() {
-
-	command := cmd.NewCleanupCommand(cmd.Build{Version: version, Commit: commit, Date: date})
-
-	if err := command.Execute(); err != nil {
-		os.Exit(1)
+	cmd.SetVersion(fmt.Sprintf("%s, commit %s, date %s", version, commit, date))
+	if err := cmd.Execute(); err != nil {
+		log.WithError(err).Fatal("Command aborted.")
 	}
 }

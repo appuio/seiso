@@ -1,5 +1,10 @@
 # Make sure to check the documentation at http://goreleaser.com
 
+before:
+  hooks:
+  - go vet ./...
+  - go test --cover ./...
+
 builds:
 - env:
   - CGO_ENABLED=0 # this is needed otherwise the Docker image build is faulty
@@ -33,8 +38,9 @@ changelog:
   sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
+    - '^Docs:'
+    - '^Test:'
+    - '^Refactor:'
 
 release:
   github:

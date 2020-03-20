@@ -14,17 +14,17 @@ type ObjectContainsTestCase struct {
 
 func Test_ObjectContains(t *testing.T) {
 	testcases := []ObjectContainsTestCase{
-		ObjectContainsTestCase{
+		{
 			object:   map[string]interface{}{"int": 20, "bool": true, "string": "foo"},
 			value:    "foo",
 			expected: true,
 		},
-		ObjectContainsTestCase{
+		{
 			object:   map[string]interface{}{"int": 20, "bool": true, "string": "foo"},
 			value:    "bar",
 			expected: false,
 		},
-		ObjectContainsTestCase{
+		{
 			object: map[string]interface{}{
 				"apiVersion": "v1",
 				"kind":       "Pod",

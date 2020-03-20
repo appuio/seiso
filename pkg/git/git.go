@@ -1,6 +1,8 @@
 package git
 
 import (
+	"fmt"
+	"github.com/appuio/image-cleanup/cfg"
 	"io"
 	"strings"
 
@@ -68,4 +70,20 @@ func GetTags(repoPath string, tagLimit int, sortTagBy SortOption) ([]string, err
 	}
 
 	return sortTags(commitTags, sortTagBy)
+}
+
+func GetGitCandidateList(o *cfg.GitConfig) ([]string, error) {
+	if o.Tag {
+		candidates, err := GetTags(o.RepoPath, o.CommitLimit, SortOption(o.SortCriteria))
+		if err != nil {
+			return []string{}, fmt.Errorf("retrieving commit tags failed: %w", err)
+		}
+		return candidates, nil
+	} else {
+		candidates, err := GetCommitHashes(o.RepoPath, o.CommitLimit)
+		if err != nil {
+			return []string{}, fmt.Errorf("retrieving commit hashes failed: %w", err)
+		}
+		return candidates, nil
+	}
 }

@@ -1,12 +1,14 @@
 package cleanup
 
 import (
-	"strings"
-	"regexp"
-	"time"
-
-	log "github.com/sirupsen/logrus"
+	"fmt"
+	"github.com/appuio/image-cleanup/pkg/openshift"
 	imagev1 "github.com/openshift/api/image/v1"
+	log "github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
+	"regexp"
+	"strings"
+	"time"
 )
 
 // MatchOption type defines how the tags should be matched
@@ -41,50 +43,30 @@ func GetMatchingTags(values, tags *[]string, matchOption MatchOption) []string {
 	return matchingTags
 }
 
-// GetInactiveTags returns the tags without active tags (unsorted)
-func GetInactiveTags(activeTags, tags *[]string) []string {
-	var inactiveTags []string
-
-	log.WithField("activeTags", activeTags).Debug("Active tags")
-	log.WithField("tags", tags).Debug("Tags")
-
-	for _, tag := range *tags {
-		active := false
-		for _, activeTag := range *activeTags {
-			if tag == activeTag {
-				active = true
-				log.WithField("tag", tag).Debug("The tag is part of the active tags")
-				break
-			}
-		}
-		if !active {
-			inactiveTags = append(inactiveTags, tag)
-		}
-	}
-
+// GetInactiveImageTags returns the tags without active tags (unsorted)
+func GetInactiveImageTags(activeTags, allImageTags *[]string) []string {
+	inactiveTags := funk.FilterString(*allImageTags, func(imageTag string) bool {
+		return !funk.ContainsString(*activeTags, imageTag)
+	})
 	return inactiveTags
 }
 
-// GetOrphanImageTags returns the tags that do not have any git commit match
-func GetOrphanImageTags(gitValues, imageTags *[]string, matchOption MatchOption) []string {
-	orphans := []string{}
+// FilterOrphanImageTags returns the tags that do not have any git commit match
+func FilterOrphanImageTags(gitValues, imageTags *[]string, matchOption MatchOption) []string {
 
-	log.WithField("gitValues", gitValues).Debug("Git commits/tags")
-	log.WithField("imageTags", imageTags).Debug("Image stream tags")
+	log.WithFields(log.Fields{
+		"imageTagsToFilter": imageTags,
+		"gitTagsToFilter":   gitValues,
+	}).Debug("Filtering image tags by commits...")
 
-	for _, tag := range *imageTags {
-		found := false
+	orphans := funk.FilterString(*imageTags, func(imageTag string) bool {
 		for _, value := range *gitValues {
-			if match(tag, value, matchOption) {
-				found = true
-				break
+			if match(imageTag, value, matchOption) {
+				return false
 			}
 		}
-		if !found {
-			orphans = append(orphans, tag)
-		}
-	}
-
+		return true
+	})
 	return orphans
 }
 
@@ -93,7 +75,7 @@ func FilterByRegex(imageTags *[]string, regexp *regexp.Regexp) []string {
 	var matchedTags []string
 
 	log.WithField("pattern:", regexp).Debug("Filtering image tags with regex...")
-	
+
 	for _, tag := range *imageTags {
 		imageTagMatched := regexp.MatchString(tag)
 		log.WithField("imageTag:", tag).WithField("match:", imageTagMatched).Debug("Matching image tag")
@@ -143,4 +125,17 @@ func match(tag, value string, matchOption MatchOption) bool {
 		return tag == value
 	}
 	return false
+}
+
+// FilterActiveImageTags first gets all actively used image tags from imageStreamTags, then filters them out from matchingTags
+func FilterActiveImageTags(namespace string, imageName string, imageStreamTags []string, matchingTags *[]string) ([]string, error) {
+	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, imageName, imageStreamTags)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve active image tags from %v/%v': %w", namespace, imageName, err)
+	}
+
+
+
+	log.WithField("activeTags", activeImageStreamTags).Debug("Found currently active image tags")
+	return GetInactiveImageTags(&activeImageStreamTags, matchingTags), nil
 }
