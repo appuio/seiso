@@ -22,10 +22,8 @@ var (
 )
 
 // Execute is the main entrypoint of the CLI, it executes child commands as given by the user-defined flags and arguments.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		log.WithError(err).Fatal("Command aborted")
-	}
+func Execute() error {
+	return rootCmd.Execute()
 }
 
 func init() {

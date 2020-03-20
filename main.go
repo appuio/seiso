@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/appuio/image-cleanup/cmd"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -13,5 +14,7 @@ var (
 
 func main() {
 	cmd.SetVersion(fmt.Sprintf("%s, commit %s, date %s", version, commit, date))
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		log.WithError(err).Fatal("Command aborted.")
+	}
 }

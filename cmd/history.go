@@ -66,7 +66,10 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 		matchOption = cleanup.MatchOptionExact
 	}
 
-	gitCandidates := git.GetGitCandidateList(&config.Git)
+	gitCandidates, err := git.GetGitCandidateList(&config.Git)
+	if err != nil {
+		return err
+	}
 	var matchingTags = cleanup.GetMatchingTags(&gitCandidates, &imageStreamTags, matchOption)
 
 	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, image, imageStreamTags)

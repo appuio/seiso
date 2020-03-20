@@ -1,8 +1,8 @@
 package git
 
 import (
+	"fmt"
 	"github.com/appuio/image-cleanup/cfg"
-	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
 
@@ -72,22 +72,18 @@ func GetTags(repoPath string, tagLimit int, sortTagBy SortOption) ([]string, err
 	return sortTags(commitTags, sortTagBy)
 }
 
-func GetGitCandidateList(o *cfg.GitConfig) []string {
-	logEvent := logrus.WithFields(logrus.Fields{
-		"GitRepoPath": o.RepoPath,
-		"CommitLimit": o.CommitLimit,
-	})
+func GetGitCandidateList(o *cfg.GitConfig) ([]string, error) {
 	if o.Tag {
 		candidates, err := GetTags(o.RepoPath, o.CommitLimit, SortOption(o.SortCriteria))
 		if err != nil {
-			logEvent.WithError(err).Fatal("Retrieving commit tags failed.")
+			return []string{}, fmt.Errorf("retrieving commit tags failed: %w", err)
 		}
-		return candidates
+		return candidates, nil
 	} else {
 		candidates, err := GetCommitHashes(o.RepoPath, o.CommitLimit)
 		if err != nil {
-			logEvent.WithError(err).Fatal("Retrieving commit hashes failed.")
+			return []string{}, fmt.Errorf("retrieving commit hashes failed: %w", err)
 		}
-		return candidates
+		return candidates, nil
 	}
 }

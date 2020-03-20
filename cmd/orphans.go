@@ -89,7 +89,10 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 		matchOption = cleanup.MatchOptionExact
 	}
 
-	gitCandidates := git.GetGitCandidateList(&config.Git)
+	gitCandidates, err := git.GetGitCandidateList(&config.Git)
+	if err != nil {
+		return err
+	}
 	imageTagList := cleanup.FilterImageTagsByTime(&allImageTags, cutOffDateTime)
 	imageTagList = cleanup.FilterOrphanImageTags(&gitCandidates, &imageTagList, matchOption)
 	imageTagList = cleanup.FilterByRegex(&imageTagList, orphanIncludeRegex)
