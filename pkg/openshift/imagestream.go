@@ -1,7 +1,7 @@
 package openshift
 
 import (
-	"github.com/appuio/image-cleanup/pkg/kubernetes"
+	"github.com/appuio/seiso/pkg/kubernetes"
 	imagev1 "github.com/openshift/api/image/v1"
 	"github.com/thoas/go-funk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

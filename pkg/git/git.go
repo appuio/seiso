@@ -2,7 +2,7 @@ package git
 
 import (
 	"fmt"
-	"github.com/appuio/image-cleanup/cfg"
+	"github.com/appuio/seiso/cfg"
 	"io"
 	"strings"
 
