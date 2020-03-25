@@ -37,10 +37,8 @@ additional cost for storage, cause confusion, or on (shared) application contain
 environments you may hit a quota limit after a while.
 
 ```
-The ImageStream "application" is invalid: []: Internal error:
- ImageStream.image.openshift.io "application" is forbidden:
- requested usage of openshift.io/image-tags
- exceeds the maximum limit per openshift.io/ImageStream (51 > 50)
+The ImageStream "application" is invalid: []: Internal error: ImageStream.image.openshift.io "application" is forbidden:
+ requested usage of openshift.io/image-tags exceeds the maximum limit per openshift.io/ImageStream (51 > 50)
 ```
 
 ## How does it work?
