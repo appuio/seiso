@@ -153,11 +153,12 @@ seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --force
 
 * go 1.13
 * goreleaser
+* Docker
 
 ### Build
 
 ```
-goreleaser --snapshot --rm-dist
+goreleaser release --snapshot --rm-dist
 ```
 
 ### Run
