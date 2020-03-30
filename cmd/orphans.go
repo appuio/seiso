@@ -3,6 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/cleanup"
 	"github.com/appuio/seiso/pkg/git"
@@ -10,9 +14,6 @@ import (
 	"github.com/karrick/tparse"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"regexp"
-	"strings"
-	"time"
 )
 
 const (
@@ -26,13 +27,15 @@ var (
 	// orphanCmd represents a cobra command to clean up images by comparing the git commit history. It removes any
 	// image tags that are not found in the git history by given criteria.
 	orphanCmd = &cobra.Command{
-		Use:     "orphans [IMAGE]",
-		Short:   "Clean up unknown image tags",
-		Long:    orphanCommandLongDescription,
-		Aliases: []string{"orph"},
-		Args:    cobra.MinimumNArgs(1),
+		Use:          "orphans [PROJECT/IMAGE]",
+		Short:        "Clean up unknown image tags",
+		Long:         orphanCommandLongDescription,
+		Aliases:      []string{"orph"},
+		Args:         cobra.ExactArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateOrphanCommandInput(args); err != nil {
+				cmd.Usage()
 				return err
 			}
 			return ExecuteOrphanCleanupCommand(args)
@@ -71,6 +74,7 @@ func validateOrphanCommandInput(args []string) error {
 	return nil
 }
 
+// ExecuteOrphanCleanupCommand executes the orphan cleanup command
 func ExecuteOrphanCleanupCommand(args []string) error {
 
 	o := config.Orphan
