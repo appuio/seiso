@@ -140,7 +140,7 @@ func Test_validateOrphanCommandInput(t *testing.T) {
 			input: args{
 				args: []string{"namespace/image"},
 				config: cfg.Configuration{
-					Orphan:cfg.OrphanConfig{
+					Orphan: cfg.OrphanConfig{
 						OrphanDeletionRegex: "*/g",
 					},
 				},

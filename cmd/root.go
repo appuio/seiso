@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/appuio/seiso/cfg"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 var (
@@ -31,7 +32,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("log.verbose", "v", config.Log.Verbose, "Shorthand for --log.level debug")
 	rootCmd.PersistentFlags().BoolP("log.batch", "b", config.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
 	cobra.OnInitialize(initRootConfig)
-
 }
 
 func initRootConfig() {
