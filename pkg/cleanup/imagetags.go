@@ -134,8 +134,6 @@ func FilterActiveImageTags(namespace string, imageName string, imageStreamTags [
 		return nil, fmt.Errorf("could not retrieve active image tags from %v/%v': %w", namespace, imageName, err)
 	}
 
-
-
 	log.WithField("activeTags", activeImageStreamTags).Debug("Found currently active image tags")
 	return GetInactiveImageTags(&activeImageStreamTags, matchingTags), nil
 }
