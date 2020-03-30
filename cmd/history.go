@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/cleanup"
 	"github.com/appuio/seiso/pkg/git"
@@ -12,13 +13,15 @@ import (
 
 var (
 	historyCmd = &cobra.Command{
-		Use:     "history [IMAGE]",
-		Aliases: []string{"hist"},
-		Short:   "Clean up excessive image tags",
-		Long:    `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
-		Args:    cobra.MinimumNArgs(1),
+		Use:          "history [PROJECT/IMAGE]",
+		Aliases:      []string{"hist"},
+		Short:        "Clean up excessive image tags",
+		Long:         `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
+		Args:         cobra.ExactArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateHistoryCommandInput(args); err != nil {
+				cmd.Usage()
 				return err
 			}
 			return ExecuteHistoryCleanupCommand(args)
@@ -46,6 +49,7 @@ func validateHistoryCommandInput(args []string) error {
 	return nil
 }
 
+// ExecuteHistoryCleanupCommand executes the history cleanup command
 func ExecuteHistoryCleanupCommand(args []string) error {
 
 	c := config.History

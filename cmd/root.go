@@ -16,7 +16,7 @@ var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
 		Use:              "seiso",
-		Short:            "keeps your kubernetes projects clean",
+		Short:            "Keeps your Kubernetes projects clean",
 		PersistentPreRun: parseConfig,
 	}
 	config = cfg.NewDefaultConfig()
