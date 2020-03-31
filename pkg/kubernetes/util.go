@@ -1,14 +1,16 @@
 package kubernetes
 
 import (
-	"k8s.io/client-go/dynamic"
 	"strings"
+
+	"k8s.io/client-go/dynamic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 type (
+	// Kubernetes defines the interface to interact with K8s
 	Kubernetes interface {
 		ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error)
 	}
@@ -18,6 +20,7 @@ type (
 	}
 )
 
+// New creates a new Kubernetes instance
 func New() Kubernetes {
 	return &kubernetesImpl{}
 }

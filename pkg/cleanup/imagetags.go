@@ -2,13 +2,14 @@ package cleanup
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/appuio/seiso/pkg/openshift"
 	imagev1 "github.com/openshift/api/image/v1"
 	log "github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
-	"regexp"
-	"strings"
-	"time"
 )
 
 // MatchOption type defines how the tags should be matched

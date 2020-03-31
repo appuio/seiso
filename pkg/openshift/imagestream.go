@@ -3,6 +3,7 @@ package openshift
 import (
 	"github.com/appuio/seiso/pkg/kubernetes"
 	imagev1 "github.com/openshift/api/image/v1"
+	log "github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
