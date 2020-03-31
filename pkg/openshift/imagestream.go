@@ -24,6 +24,9 @@ var (
 
 // GetActiveImageStreamTags retrieves the image streams tags referenced in some Kubernetes resources
 func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []string) (activeImageStreamTags []string, funcError error) {
+	if len(imageStreamTags) == 0 {
+		return []string{}, nil
+	}
 	funk.ForEach(resources, func(resource schema.GroupVersionResource) {
 		funk.ForEach(imageStreamTags, func(imageStreamTag string) {
 			if funk.ContainsString(activeImageStreamTags, imageStreamTag) {
