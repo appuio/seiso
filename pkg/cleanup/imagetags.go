@@ -13,34 +13,41 @@ import (
 )
 
 // MatchOption type defines how the tags should be matched
-type MatchOption int8
+type MatchOption string
 
 const (
-	MatchOptionDefault MatchOption = iota
-	MatchOptionExact
-	MatchOptionPrefix
+	// MatchOptionExact for exact matches
+	MatchOptionExact MatchOption = "exact"
+	// MatchOptionPrefix for prefix matches
+	MatchOptionPrefix MatchOption = "prefix"
 )
 
-// GetMatchingTags returns all tags matching one of the provided prefixes
-func GetMatchingTags(values, tags *[]string, matchOption MatchOption) []string {
+// GetMatchingTags returns all image tags matching one of the provided git tags
+func GetMatchingTags(gitTags, imageTags *[]string, matchOption MatchOption) []string {
 	var matchingTags []string
 
-	log.WithField("values", values).Debug("values")
-	log.WithField("tags", tags).Debug("tags")
+	log.WithFields(log.Fields{
+		"match":     matchOption,
+		"imageTags": imageTags,
+		"gitTags":   gitTags,
+	}).Debug("Matching imageTags with gitTags")
 
-	if len(*values) > 0 && len(*tags) > 0 {
-		for _, value := range *values {
-			for _, tag := range *tags {
-				if match(tag, value, matchOption) {
-					matchingTags = append(matchingTags, tag)
-					log.WithFields(log.Fields{
-						"tag":   tag,
-						"value": value}).
-						Debug("Tag matched")
-				}
+	if len(*gitTags) == 0 || len(*imageTags) == 0 {
+		return matchingTags
+	}
+
+	for _, gitTag := range *gitTags {
+		for _, imageTag := range *imageTags {
+			if match(imageTag, gitTag, matchOption) {
+				matchingTags = append(matchingTags, imageTag)
+				log.WithFields(log.Fields{
+					"gitTag":   gitTag,
+					"imageTag": imageTag,
+				}).Debug("Found matching tag")
 			}
 		}
 	}
+
 	return matchingTags
 }
 
@@ -61,8 +68,8 @@ func FilterOrphanImageTags(gitValues, imageTags *[]string, matchOption MatchOpti
 	}).Debug("Filtering image tags by commits...")
 
 	orphans := funk.FilterString(*imageTags, func(imageTag string) bool {
-		for _, value := range *gitValues {
-			if match(imageTag, value, matchOption) {
+		for _, gitValue := range *gitValues {
+			if match(imageTag, gitValue, matchOption) {
 				return false
 			}
 		}
@@ -79,7 +86,10 @@ func FilterByRegex(imageTags *[]string, regexp *regexp.Regexp) []string {
 
 	for _, tag := range *imageTags {
 		imageTagMatched := regexp.MatchString(tag)
-		log.WithField("imageTag:", tag).WithField("match:", imageTagMatched).Debug("Matching image tag")
+		log.WithFields(log.Fields{
+			"imageTag:": tag,
+			"match:":    imageTagMatched,
+		}).Debug("Matching image tag")
 		if imageTagMatched {
 			matchedTags = append(matchedTags, tag)
 		}
@@ -118,12 +128,12 @@ func FilterImageTagsByTime(imageStreamObjectTags *[]imagev1.NamedTagEventList, o
 	return imageStreamTags
 }
 
-func match(tag, value string, matchOption MatchOption) bool {
+func match(imageTag, value string, matchOption MatchOption) bool {
 	switch matchOption {
-	case MatchOptionDefault, MatchOptionPrefix:
-		return strings.HasPrefix(tag, value)
+	case MatchOptionPrefix:
+		return strings.HasPrefix(imageTag, value)
 	case MatchOptionExact:
-		return tag == value
+		return imageTag == value
 	}
 	return false
 }

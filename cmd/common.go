@@ -11,13 +11,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func DeleteImages(imageTags []string, imageName string, namespace string) {
+// DeleteImages deletes a list of image tags
+func DeleteImages(imageTags []string, imageName string, namespace string, force bool) {
+	if !force {
+		log.Warn("Force mode not enabled, nothing will be deleted")
+	}
 	for _, inactiveTag := range imageTags {
-		err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag))
-		if err == nil {
-			log.WithField("imageTag", inactiveTag).Info("Deleted image tag")
+		logEvent := log.WithFields(log.Fields{
+			"namespace": namespace,
+			"image":     imageName,
+			"imageTag":  inactiveTag,
+		})
+		if force {
+			if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
+				logEvent.Info("Deleted image tag")
+			} else {
+				logEvent.Error("Could not delete image tag")
+			}
 		} else {
-			log.WithError(err).WithField("imageTag", inactiveTag).Error("Could not delete image")
+			logEvent.Info("Would delete image tag")
 		}
 	}
 }
@@ -31,7 +43,7 @@ func PrintImageTags(imageTags []string) {
 		}
 	} else {
 		for _, tag := range imageTags {
-			log.WithField("imageTag", tag).Info("Found image tag candidate.")
+			log.WithField("imageTag", tag).Info("Found image tag candidate")
 		}
 	}
 }
@@ -62,6 +74,9 @@ func listImages() error {
 	for _, image := range imageStreams {
 		imageNames = append(imageNames, image.Name)
 	}
-	log.WithField("project", ns).WithField("images", imageNames).Info("Please select an image. The following images are available")
+	log.WithFields(log.Fields{
+		"project": ns,
+		"images":  imageNames,
+	}).Info("Please select an image. The following images are available")
 	return nil
 }

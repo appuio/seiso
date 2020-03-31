@@ -30,7 +30,7 @@ var (
 		Use:          "orphans [PROJECT/IMAGE]",
 		Short:        "Clean up unknown image tags",
 		Long:         orphanCommandLongDescription,
-		Aliases:      []string{"orph"},
+		Aliases:      []string{"orph", "orphan"},
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -92,7 +92,7 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 	cutOffDateTime, _ := parseCutOffDateTime(o.OlderThan)
 	orphanIncludeRegex, _ := parseOrphanDeletionRegex(o.OrphanDeletionRegex)
 
-	matchOption := cleanup.MatchOptionDefault
+	matchOption := cleanup.MatchOptionPrefix
 	if config.Git.Tag {
 		matchOption = cleanup.MatchOptionExact
 	}
@@ -108,14 +108,15 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	PrintImageTags(imageTagList)
-
-	if config.Force {
-		DeleteImages(imageTagList, imageName, namespace)
-	} else {
-		log.Info("--force was not specified. Nothing has been deleted.")
+	if len(imageTagList) == 0 {
+		log.WithFields(log.Fields{
+			"namespace": namespace,
+			"imageName": imageName,
+		}).Info("No orphaned image stream tags found")
+		return nil
 	}
+	PrintImageTags(imageTagList)
+	DeleteImages(imageTagList, imageName, namespace, config.Force)
 	return nil
 }
 

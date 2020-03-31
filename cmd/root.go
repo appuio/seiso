@@ -62,13 +62,11 @@ func parseConfig(cmd *cobra.Command, args []string) {
 	}
 	level, err := log.ParseLevel(config.Log.LogLevel)
 	if err != nil {
-		log.WithField("error", err).Warn("Using info level.")
+		log.WithError(err).Warn("Could not parse log level, fallback to info level")
 		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(level)
 	}
-
-	log.WithField("config", config).Debug("Parsed configuration.")
 }
 
 func bindFlags(flagSet *pflag.FlagSet) {

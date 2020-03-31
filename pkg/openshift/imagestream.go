@@ -25,6 +25,11 @@ var (
 
 // GetActiveImageStreamTags retrieves the image streams tags referenced in some Kubernetes resources
 func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []string) (activeImageStreamTags []string, funcError error) {
+	log.WithFields(log.Fields{
+		"namespace": namespace,
+		"imageName": imageStream,
+		"imageTags": imageStreamTags,
+	}).Debug("Looking for active images")
 	if len(imageStreamTags) == 0 {
 		return []string{}, nil
 	}
