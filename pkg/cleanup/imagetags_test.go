@@ -42,6 +42,7 @@ type TagsOlderThanTestCase struct {
 func Test_GetMatchingTags(t *testing.T) {
 	testcases := []GetMatchingTagsTestCase{
 		{
+			matchOption: MatchOptionPrefix,
 			matchValues: []string{
 				"0b81a958f590ed7ed8",
 				"108f2be974f8e1e5fec8bc759ecf824e81565747",
@@ -383,7 +384,7 @@ func TestFilterOrphanImageTags(t *testing.T) {
 			args: args{
 				gitValues:   &[]string{},
 				imageTags:   &[]string{"a1"},
-				matchOption: MatchOptionDefault,
+				matchOption: MatchOptionPrefix,
 			},
 			want: []string{"a1"},
 		},
@@ -392,7 +393,7 @@ func TestFilterOrphanImageTags(t *testing.T) {
 			args: args{
 				gitValues:   &[]string{"a1", "a2", "a3"},
 				imageTags:   &[]string{"a1", "b2", "b3"},
-				matchOption: MatchOptionDefault,
+				matchOption: MatchOptionPrefix,
 			},
 			want: []string{"b2", "b3"},
 		},
@@ -401,7 +402,7 @@ func TestFilterOrphanImageTags(t *testing.T) {
 			args: args{
 				gitValues:   &[]string{"a1", "a2", "a3"},
 				imageTags:   &[]string{"a1", "a2", "a3"},
-				matchOption: MatchOptionDefault,
+				matchOption: MatchOptionPrefix,
 			},
 			want: []string{},
 		},
@@ -410,7 +411,7 @@ func TestFilterOrphanImageTags(t *testing.T) {
 			args: args{
 				gitValues:   &[]string{"a1", "a2", "a3"},
 				imageTags:   &[]string{},
-				matchOption: MatchOptionDefault,
+				matchOption: MatchOptionPrefix,
 			},
 			want: []string{},
 		},

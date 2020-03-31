@@ -70,7 +70,7 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 		imageStreamTags = append(imageStreamTags, imageTag.Tag)
 	}
 
-	matchOption := cleanup.MatchOptionDefault
+	matchOption := cleanup.MatchOptionPrefix
 	if config.Git.Tag {
 		matchOption = cleanup.MatchOptionExact
 	}
@@ -88,13 +88,14 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 
 	inactiveTags := cleanup.GetInactiveImageTags(&activeImageStreamTags, &matchingTags)
 	inactiveTags = cleanup.LimitTags(&inactiveTags, c.Keep)
-
-	PrintImageTags(inactiveTags)
-
-	if config.Force {
-		DeleteImages(inactiveTags, image, namespace)
-	} else {
-		log.Info("--force was not specified. Nothing has been deleted.")
+	if len(inactiveTags) == 0 {
+		log.WithFields(log.Fields{
+			"namespace": namespace,
+			"imageName": image,
+		}).Info("No inactive image stream tags found")
+		return nil
 	}
+	PrintImageTags(inactiveTags)
+	DeleteImages(inactiveTags, image, namespace, config.Force)
 	return nil
 }
