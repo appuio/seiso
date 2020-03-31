@@ -17,7 +17,7 @@ var (
 		Aliases:      []string{"hist"},
 		Short:        "Clean up excessive image tags",
 		Long:         `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
-		Args:         cobra.ExactArgs(1),
+		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateHistoryCommandInput(args); err != nil {
@@ -40,6 +40,9 @@ func init() {
 }
 
 func validateHistoryCommandInput(args []string) error {
+	if len(args) == 0 {
+		return nil
+	}
 	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
 		return fmt.Errorf("could not parse image name: %w", err)
 	}
@@ -51,7 +54,9 @@ func validateHistoryCommandInput(args []string) error {
 
 // ExecuteHistoryCleanupCommand executes the history cleanup command
 func ExecuteHistoryCleanupCommand(args []string) error {
-
+	if len(args) == 0 {
+		return listImages()
+	}
 	c := config.History
 	namespace, image, _ := splitNamespaceAndImagestream(args[0])
 

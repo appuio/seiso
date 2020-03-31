@@ -75,3 +75,17 @@ func DeleteImageStreamTag(namespace, name string) error {
 func BuildImageStreamTagName(imageStream string, imageStreamTag string) string {
 	return imageStream + ":" + imageStreamTag
 }
+
+// ListImageStreams lists all available image streams in a namespace
+func ListImageStreams(namespace string) ([]imagev1.ImageStream, error) {
+	imageClient, err := NewImageV1Client()
+	if err != nil {
+		return nil, err
+	}
+
+	imageStreams, err := imageClient.ImageStreams(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return imageStreams.Items, nil
+}

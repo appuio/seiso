@@ -31,7 +31,7 @@ var (
 		Short:        "Clean up unknown image tags",
 		Long:         orphanCommandLongDescription,
 		Aliases:      []string{"orph"},
-		Args:         cobra.ExactArgs(1),
+		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := validateOrphanCommandInput(args); err != nil {
@@ -55,7 +55,9 @@ func init() {
 }
 
 func validateOrphanCommandInput(args []string) error {
-
+	if len(args) == 0 {
+		return nil
+	}
 	o := config.Orphan
 	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
 		return err
@@ -76,7 +78,9 @@ func validateOrphanCommandInput(args []string) error {
 
 // ExecuteOrphanCleanupCommand executes the orphan cleanup command
 func ExecuteOrphanCleanupCommand(args []string) error {
-
+	if len(args) == 0 {
+		return listImages()
+	}
 	o := config.Orphan
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
