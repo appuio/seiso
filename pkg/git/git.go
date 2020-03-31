@@ -2,9 +2,10 @@ package git
 
 import (
 	"fmt"
-	"github.com/appuio/seiso/cfg"
 	"io"
 	"strings"
+
+	"github.com/appuio/seiso/cfg"
 
 	"gopkg.in/src-d/go-git.v4"
 )
@@ -72,6 +73,7 @@ func GetTags(repoPath string, tagLimit int, sortTagBy SortOption) ([]string, err
 	return sortTags(commitTags, sortTagBy)
 }
 
+// GetGitCandidateList returns either git tags or git commit SHAs
 func GetGitCandidateList(o *cfg.GitConfig) ([]string, error) {
 	if o.Tag {
 		candidates, err := GetTags(o.RepoPath, o.CommitLimit, SortOption(o.SortCriteria))
