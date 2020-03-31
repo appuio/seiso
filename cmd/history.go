@@ -81,7 +81,7 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 	}
 	var matchingTags = cleanup.GetMatchingTags(&gitCandidates, &imageStreamTags, matchOption)
 
-	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, image, imageStreamTags)
+	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, image, matchingTags)
 	if err != nil {
 		return fmt.Errorf("could not retrieve active image stream tags for '%s/%s': %w", namespace, image, err)
 	}
