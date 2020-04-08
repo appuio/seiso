@@ -29,10 +29,25 @@ checksum:
 snapshot:
   name_template: "{{ .Tag }}-snapshot"
 
+signs:
+- artifacts: checksum
+  args: ["-u", "51C334321C8CE7A36688DEB45A2CE60942C3A798", "--output", "${signature}", "--detach-sign", "${artifact}"]
+
 dockers:
 - image_templates:
   - "docker.io/appuio/seiso:v{{ .Version }}"
   - "docker.io/appuio/seiso:v{{ .Major }}"
+
+nfpms:
+- vendor: APPUiO
+  homepage: https://github.com/appuio/seiso
+  maintainer: VSHN AG
+  description: Seiso. Clean up your Docker image registry and Kubernetes resources.
+  license: BSD 3-Clause
+  file_name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+  formats:
+  - deb
+  - rpm
 
 changelog:
   sort: asc
