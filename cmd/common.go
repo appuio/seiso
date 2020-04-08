@@ -23,10 +23,10 @@ func DeleteImages(imageTags []string, imageName string, namespace string, force 
 			"imageTag":  inactiveTag,
 		})
 		if force {
-			if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
+			if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err == nil {
 				logEvent.Info("Deleted image tag")
 			} else {
-				logEvent.Error("Could not delete image tag")
+				logEvent.WithError(err).Error("Could not delete image tag")
 			}
 		} else {
 			logEvent.Info("Would delete image tag")
