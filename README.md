@@ -156,7 +156,7 @@ seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --force
 ### Build
 
 ```
-goreleaser release --snapshot --rm-dist
+goreleaser release --snapshot --rm-dist --skip-sign
 ```
 
 ### Run
