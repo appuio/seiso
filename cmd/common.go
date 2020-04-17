@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/git"
@@ -9,6 +10,8 @@ import (
 	"github.com/appuio/seiso/pkg/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/thoas/go-funk"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteImages deletes a list of image tags
@@ -34,6 +37,30 @@ func DeleteImages(imageTags []string, imageName string, namespace string, force 
 	}
 }
 
+// DeleteResources deletes a list of ConfigMaps or secrets
+func DeleteResources(resources []cfg.KubernetesResource, force bool, resourceSelectorFunc cfg.ResourceNamespaceSelector) {
+	if !force {
+		log.Warn("Force mode not enabled, nothing will be deleted")
+	}
+	for _, resource := range resources {
+		kind := resource.GetKind()
+		name := resource.GetName()
+		logEvent := log.WithFields(log.Fields{
+			"namespace": resource.GetNamespace(),
+			kind:        name,
+		})
+		if force {
+			if err := openshift.DeleteResource(name, resourceSelectorFunc); err == nil {
+				logEvent.Info("Deleted resource")
+			} else {
+				logEvent.WithError(err).Error("Could not delete resource")
+			}
+		} else {
+			logEvent.Info("Would delete resource")
+		}
+	}
+}
+
 // PrintImageTags prints the given image tags line by line. In batch mode, only the tag name is printed, otherwise default
 // log with info level
 func PrintImageTags(imageTags []string) {
@@ -44,6 +71,20 @@ func PrintImageTags(imageTags []string) {
 	} else {
 		for _, tag := range imageTags {
 			log.WithField("imageTag", tag).Info("Found image tag candidate")
+		}
+	}
+}
+
+// PrintResources prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
+// log with info level
+func PrintResources(resources []cfg.KubernetesResource) {
+	if config.Log.Batch {
+		for _, resource := range resources {
+			fmt.Println(resource.GetKind() + ": " + resource.GetName())
+		}
+	} else {
+		for _, resource := range resources {
+			log.WithField(resource.GetKind(), resource.GetName()).Info("Found resource candidate")
 		}
 	}
 }
@@ -79,4 +120,78 @@ func listImages() error {
 		"images":  imageNames,
 	}).Info("Please select an image. The following images are available")
 	return nil
+}
+
+func listConfigMaps(args []string) error {
+	namespace, err := getNamespace(args)
+	if err != nil {
+		return err
+	}
+
+	configMaps, err := openshift.ListConfigMaps(namespace, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	configMapNames, labels := getNamesAndLabels(configMaps)
+
+	log.WithFields(log.Fields{
+		"\n - project": namespace,
+		"\n - 🔓 configMaps": configMapNames,
+		"\n - 🎫 labels": labels,
+	}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
+	return nil
+}
+
+func listSecrets(args []string) error {
+	namespace, err := getNamespace(args)
+	if err != nil {
+		return err
+	}
+	secrets, err := openshift.ListSecrets(namespace, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	secretNames, labels := getNamesAndLabels(secrets)
+	log.WithFields(log.Fields{
+		"\n - project": namespace,
+		"\n - 🔐 secrets": secretNames,
+		"\n - 🎫 labels": labels,
+	}).Info("Please use labels to select Secrets. The following Secrets and Labels are available:")
+	return nil
+}
+
+func getNamesAndLabels(resources []cfg.KubernetesResource) (resourceNames, labels []string) {
+	for _, resource := range resources {
+		resourceNames = append(resourceNames, resource.GetName())
+		for key, element := range resource.GetLabels() {
+			label := key + "=" + element
+			if !funk.ContainsString(labels, label) {
+				labels = append(labels, label)
+			}
+		}
+	}
+
+	return resourceNames, labels
+}
+
+//GetListOptions returns a ListOption object based on labels
+func getListOptions(labels []string) metav1.ListOptions {
+	labelSelector := fmt.Sprintf(strings.Join(labels, ","))
+	return metav1.ListOptions{
+		LabelSelector: labelSelector,
+	}
+}
+
+func getNamespace(args []string) (string, error) {
+	if len(args) == 0 {
+		namespace, err := kubernetes.Namespace()
+		if err != nil {
+			return "", err
+		}
+		return namespace, err
+	} else {
+		return args[0], nil
+	}
 }
