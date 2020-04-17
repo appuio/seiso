@@ -49,7 +49,7 @@ func parseConfig(cmd *cobra.Command, args []string) {
 	}
 
 	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
+		DisableTimestamp: true,
 	})
 
 	if config.Log.Batch {
