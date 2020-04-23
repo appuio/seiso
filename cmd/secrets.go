@@ -57,7 +57,9 @@ func validateSecretCommandInput(args []string) error {
 
 func executeSecretCleanupCommand(args []string) error {
 	if len(args) == 0 || len(config.Resource.Labels) == 0 {
-		listSecrets(args)
+		if err := listSecrets(args); err != nil {
+			return err
+		}
 		return nil
 	}
 
