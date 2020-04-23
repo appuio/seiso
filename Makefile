@@ -4,7 +4,7 @@ all: clean fmt tests build
 
 fmt:
 	@echo 'Reformat Go code ...'
-	find . -type f -name '*.go' -exec go fmt {} \;
+	go fmt ./...
 
 tests:
 	@echo 'Run all tests ...'
