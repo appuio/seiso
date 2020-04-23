@@ -21,7 +21,7 @@ var configMapLog *log.Entry
 var (
 	// configMapCmd represents a cobra command to clean up unused ConfigMaps
 	configMapCmd = &cobra.Command{
-		Use:          "configmaps [PROJECT]",
+		Use:          "configmaps [NAMESPACE]",
 		Short:        "Cleans up your unused ConfigMaps in the Kubernetes cluster",
 		Long:         configMapCommandLongDescription,
 		Aliases:      []string{"configmap", "cm"},

@@ -98,11 +98,11 @@ func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 }
 
 func listImages() error {
-	ns, err := kubernetes.Namespace()
+	namespace, err := kubernetes.Namespace()
 	if err != nil {
 		return err
 	}
-	imageStreams, err := openshift.ListImageStreams(ns)
+	imageStreams, err := openshift.ListImageStreams(namespace)
 	if err != nil {
 		return err
 	}
@@ -111,8 +111,8 @@ func listImages() error {
 		imageNames = append(imageNames, image.Name)
 	}
 	log.WithFields(log.Fields{
-		"\n - project":  ns,
-		"\n - 📺 images": imageNames,
+		"\n - namespace": namespace,
+		"\n - 📺 images":  imageNames,
 	}).Info("Please select an image. The following images are available:")
 	return nil
 }
@@ -131,7 +131,7 @@ func listConfigMaps(args []string) error {
 	configMapNames, labels := getNamesAndLabels(configMaps)
 
 	log.WithFields(log.Fields{
-		"\n - project":      namespace,
+		"\n - namespace":    namespace,
 		"\n - 🔓 configMaps": configMapNames,
 		"\n - 🎫 labels":     labels,
 	}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
@@ -150,7 +150,7 @@ func listSecrets(args []string) error {
 
 	secretNames, labels := getNamesAndLabels(secrets)
 	log.WithFields(log.Fields{
-		"\n - project":   namespace,
+		"\n - namespace": namespace,
 		"\n - 🔐 secrets": secretNames,
 		"\n - 🎫 labels":  labels,
 	}).Info("Please use labels to select Secrets. The following Secrets and Labels are available:")

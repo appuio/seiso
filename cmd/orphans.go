@@ -27,7 +27,7 @@ var (
 	// orphanCmd represents a cobra command to clean up images by comparing the git commit history. It removes any
 	// image tags that are not found in the git history by given criteria.
 	orphanCmd = &cobra.Command{
-		Use:          "orphans [PROJECT/IMAGE]",
+		Use:          "orphans [NAMESPACE/IMAGE]",
 		Short:        "Clean up unknown image tags",
 		Long:         orphanCommandLongDescription,
 		Aliases:      []string{"orph", "orphan"},
