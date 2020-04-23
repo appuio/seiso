@@ -219,26 +219,43 @@ seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --force
 
 ## Development
 
-### Requirements
+Requirements:
 
 * go 1.13
 * goreleaser
 * Docker
 
-### Build
+Run code during development:
+```console
+go run main.go
+```
 
-```
-goreleaser release --snapshot --rm-dist --skip-sign
+Reformat all Go code:
+```console
+make fmt
 ```
 
-### Run
+Run test suite:
+```console
+make tests
 ```
-./dist/seiso_linux_amd64/seiso --help
-# or
+
+Build seiso binary:
+```console
+make clean build
+```
+
+Build binaries for all target distributions:
+```console
+make clean dist
+```
+
+Run seiso using its container image:
+```
 docker run --rm -it appuio/seiso:<tag>
 ```
 
-## Release
+### Release
 
 Push a git tag with the scheme `vX.Y.Z` (semver).
 
