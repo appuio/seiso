@@ -60,7 +60,9 @@ func validateConfigMapCommandInput(args []string) error {
 
 func executeConfigMapCleanupCommand(args []string) error {
 	if len(args) == 0 || len(config.Resource.Labels) == 0 {
-		listConfigMaps(args)
+		if err := listConfigMaps(args); err != nil {
+			return err
+		}
 		return nil
 	}
 
