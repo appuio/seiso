@@ -19,7 +19,7 @@ This command deletes secrets that are not being used anymore.`
 var (
 	// secretCmd represents a cobra command to clean up unused secrets
 	secretCmd = &cobra.Command{
-		Use:          "secrets [PROJECT]",
+		Use:          "secrets [NAMESPACE]",
 		Short:        "Cleans up your unused secrets in the Kubernetes cluster",
 		Long:         secretCommandLongDescription,
 		Aliases:      []string{"secret"},

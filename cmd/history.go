@@ -13,7 +13,7 @@ import (
 
 var (
 	historyCmd = &cobra.Command{
-		Use:          "history [PROJECT/IMAGE]",
+		Use:          "history [NAMESPACE/IMAGE]",
 		Aliases:      []string{"hist"},
 		Short:        "Clean up excessive image tags",
 		Long:         `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
@@ -62,7 +62,7 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 
 	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, image)
 	if err != nil {
-		return fmt.Errorf("could not retrive image stream '%s/%s': %w", namespace, image, err)
+		return fmt.Errorf("could not retrieve image stream '%s/%s': %w", namespace, image, err)
 	}
 
 	var imageStreamTags []string
