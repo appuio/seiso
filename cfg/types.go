@@ -13,7 +13,7 @@ type (
 		Orphan   OrphanConfig   `mapstructure:",squash"`
 		Resource ResourceConfig `mapstructure:",squash"`
 		Log      LogConfig
-		Force    bool
+		Delete   bool
 	}
 	// GitConfig configures git repository
 	GitConfig struct {
@@ -64,7 +64,7 @@ func NewDefaultConfig() *Configuration {
 			Labels:    []string{},
 			OlderThan: "2mo",
 		},
-		Force: false,
+		Delete: false,
 		Log: LogConfig{
 			LogLevel: "info",
 			Batch:    false,

@@ -6,8 +6,9 @@ import (
 
 // imagesCmd represents the images command
 var imagesCmd = &cobra.Command{
-	Use:   "images",
-	Short: "Cleans up your image registry from unused image tags",
+	Use:     "images",
+	Short:   "Cleans up your image registry from unused image tags",
+	Aliases: []string{"image", "img"},
 }
 
 func init() {

@@ -15,33 +15,27 @@ import (
 )
 
 // DeleteImages deletes a list of image tags
-func DeleteImages(imageTags []string, imageName string, namespace string, force bool) {
-	if !force {
-		log.Warn("Force mode not enabled, nothing will be deleted")
-	}
+func DeleteImages(imageTags []string, imageName string, namespace string, delete bool) {
 	for _, inactiveTag := range imageTags {
 		logEvent := log.WithFields(log.Fields{
 			"namespace": namespace,
 			"image":     imageName,
 			"imageTag":  inactiveTag,
 		})
-		if force {
-			if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err == nil {
-				logEvent.Info("Deleted image tag")
+		if delete {
+			if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
+				logEvent.WithError(err).Error("Failed to delete")
 			} else {
-				logEvent.WithError(err).Error("Could not delete image tag")
+				logEvent.Info("Deleted")
 			}
 		} else {
-			logEvent.Info("Would delete image tag")
+			logEvent.Info("Should be deleted")
 		}
 	}
 }
 
 // DeleteResources deletes a list of ConfigMaps or secrets
-func DeleteResources(resources []cfg.KubernetesResource, force bool, resourceSelectorFunc cfg.ResourceNamespaceSelector) {
-	if !force {
-		log.Warn("Force mode not enabled, nothing will be deleted")
-	}
+func DeleteResources(resources []cfg.KubernetesResource, delete bool, resourceSelectorFunc cfg.ResourceNamespaceSelector) {
 	for _, resource := range resources {
 		kind := resource.GetKind()
 		name := resource.GetName()
@@ -49,14 +43,14 @@ func DeleteResources(resources []cfg.KubernetesResource, force bool, resourceSel
 			"namespace": resource.GetNamespace(),
 			kind:        name,
 		})
-		if force {
-			if err := openshift.DeleteResource(name, resourceSelectorFunc); err == nil {
-				logEvent.Info("Deleted resource")
+		if delete {
+			if err := openshift.DeleteResource(name, resourceSelectorFunc); err != nil {
+				logEvent.WithError(err).Error("Failed to delete")
 			} else {
-				logEvent.WithError(err).Error("Could not delete resource")
+				logEvent.Info("Deleted")
 			}
 		} else {
-			logEvent.Info("Would delete resource")
+			logEvent.Info("Should be deleted")
 		}
 	}
 }
@@ -89,10 +83,11 @@ func PrintResources(resources []cfg.KubernetesResource) {
 	}
 }
 
-// addCommonFlagsForGit sets up the force flag, as well as the common git flags. Adding the flags to the root cmd would make those
+// addCommonFlagsForGit sets up the delete flag, as well as the common git flags. Adding the flags to the root cmd would make those
 // global, even for commands that do not need them, which might be overkill.
 func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
-	cmd.PersistentFlags().BoolP("force", "f", defaults.Force, "Confirm deletion of image tags.")
+	cmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of image tags.")
+	cmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Confirm deletion. Alias for --delete")
 	cmd.PersistentFlags().IntP("commit-limit", "l", defaults.Git.CommitLimit,
 		"Only look at the first <l> commits to compare with tags. Use 0 (zero) for all commits. Limited effect if repo is a shallow clone.")
 	cmd.PersistentFlags().StringP("repo-path", "p", defaults.Git.RepoPath, "Path to Git repository")
@@ -116,9 +111,9 @@ func listImages() error {
 		imageNames = append(imageNames, image.Name)
 	}
 	log.WithFields(log.Fields{
-		"project": ns,
-		"images":  imageNames,
-	}).Info("Please select an image. The following images are available")
+		"\n - project":  ns,
+		"\n - 📺 images": imageNames,
+	}).Info("Please select an image. The following images are available:")
 	return nil
 }
 

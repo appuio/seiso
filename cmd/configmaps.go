@@ -42,7 +42,8 @@ func init() {
 	rootCmd.AddCommand(configMapCmd)
 	defaults := cfg.NewDefaultConfig()
 
-	configMapCmd.PersistentFlags().BoolP("force", "f", defaults.Force, "Confirm deletion of ConfigMaps.")
+	configMapCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of ConfigMaps.")
+	configMapCmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Alias for --delete")
 	configMapCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the config map by these labels")
 	configMapCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
 		"Keep most current <k> ConfigMaps. Does not include currently used ConfigMaps (if detected).")
@@ -93,7 +94,7 @@ func executeConfigMapCleanupCommand(args []string) error {
 	PrintResources(filteredConfigMaps)
 	DeleteResources(
 		filteredConfigMaps,
-		config.Force,
+		config.Delete,
 		func(client *core.CoreV1Client) cfg.CoreObjectInterface {
 			return client.ConfigMaps(namespace)
 		})
