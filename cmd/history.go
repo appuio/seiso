@@ -90,12 +90,12 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 	inactiveTags = cleanup.LimitTags(&inactiveTags, c.Keep)
 	if len(inactiveTags) == 0 {
 		log.WithFields(log.Fields{
-			"namespace": namespace,
-			"imageName": image,
+			"\n - namespace": namespace,
+			"\n - imageName": image,
 		}).Info("No inactive image stream tags found")
 		return nil
 	}
 	PrintImageTags(inactiveTags)
-	DeleteImages(inactiveTags, image, namespace, config.Force)
+	DeleteImages(inactiveTags, image, namespace, config.Delete)
 	return nil
 }

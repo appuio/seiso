@@ -66,24 +66,21 @@ The ImageStream "application" is invalid: []: Internal error: ImageStream.image.
 1. It can be used more aggressively by deleting dangling image tags, "orphans",
    that happen to exist when the Git history is altered (e.g. by force-pushing).
 
-1. It can identify `ConfigMap` resources by its `config` label that are sufficiently
-   old to be deleted.
+1. It can identify `ConfigMap` resources by labels that are sufficiently old to be deleted.
 
-1. It can identify `Secret` resources by its `secret` label that are sufficiently
-   old to be deleted.
+1. It can identify `Secret` resources by labels that are sufficiently old to be deleted.
 
 *Seiso* is opinionated, e.g. with respect to naming conventions of image tags,
 either by relying on a long Git SHA-1 value (`namespace/app:a3d0df2c5060b87650df6a94a0a9600510303003`)
 or a Git tag following semantic versioning (`namespace/app:v1.2.3`).
 
-The cleanup **runs in dry-mode by default**. Only when the `--force` flag is specified,
-it will actually delete the identified resources. This should prevent accidental
-deletions during verifications or test runs.
+The cleanup **runs in dry-mode by default**. Only when the `--delete` flag
+is specified, it will actually delete the identified resources. This should
+prevent accidental deletions during verifications or test runs.
 
 ## Caveats and known issues
 
-* Currently only OpenShift image registries are supported. In future, more
-  resource types are planned to be supported for cleanup.
+* Currently, only OpenShift image registries are supported.
 
 * **Please watch out for shallow clones**, as the Git history might be missing,
   it would in some cases also undesirably delete image tags.
@@ -214,7 +211,7 @@ oc -n "$OPENSHIFT_PROJECT" plugin cleanup "$APP_NAME" -p "$PWD" -f=y
 ```
 becomes:
 ```console
-seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --force
+seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --delete
 ```
 
 ## Development

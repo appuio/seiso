@@ -39,7 +39,8 @@ func init() {
 	rootCmd.AddCommand(secretCmd)
 	defaults := cfg.NewDefaultConfig()
 
-	secretCmd.PersistentFlags().BoolP("force", "f", defaults.Force, "Confirm deletion of secrets.")
+	secretCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of secrets.")
+	secretCmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Alias for --delete")
 	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the secret by these labels")
 	secretCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
 		"Keep most current <k> secrets. Does not include currently used secret (if detected).")
@@ -90,7 +91,7 @@ func executeSecretCleanupCommand(args []string) error {
 	PrintResources(filteredSecrets)
 	DeleteResources(
 		filteredSecrets,
-		config.Force,
+		config.Delete,
 		func(client *core.CoreV1Client) cfg.CoreObjectInterface {
 			return client.Secrets(namespace)
 		})
