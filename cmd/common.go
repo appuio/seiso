@@ -136,9 +136,9 @@ func listConfigMaps(args []string) error {
 	configMapNames, labels := getNamesAndLabels(configMaps)
 
 	log.WithFields(log.Fields{
-		"\n - project": namespace,
+		"\n - project":      namespace,
 		"\n - 🔓 configMaps": configMapNames,
-		"\n - 🎫 labels": labels,
+		"\n - 🎫 labels":     labels,
 	}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
 	return nil
 }
@@ -155,9 +155,9 @@ func listSecrets(args []string) error {
 
 	secretNames, labels := getNamesAndLabels(secrets)
 	log.WithFields(log.Fields{
-		"\n - project": namespace,
+		"\n - project":   namespace,
 		"\n - 🔐 secrets": secretNames,
-		"\n - 🎫 labels": labels,
+		"\n - 🎫 labels":  labels,
 	}).Info("Please use labels to select Secrets. The following Secrets and Labels are available:")
 	return nil
 }
