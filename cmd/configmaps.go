@@ -21,7 +21,7 @@ var configMapLog *log.Entry
 var (
 	// configMapCmd represents a cobra command to clean up unused ConfigMaps
 	configMapCmd = &cobra.Command{
-		Use:          "configmaps [NAMESPACE]",
+		Use:          "configmaps",
 		Short:        "Cleans up your unused ConfigMaps in the Kubernetes cluster",
 		Long:         configMapCommandLongDescription,
 		Aliases:      []string{"configmap", "cm"},
@@ -43,7 +43,6 @@ func init() {
 	defaults := cfg.NewDefaultConfig()
 
 	configMapCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of ConfigMaps.")
-	configMapCmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Alias for --delete")
 	configMapCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the config map by these labels")
 	configMapCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
 		"Keep most current <k> ConfigMaps. Does not include currently used ConfigMaps (if detected).")
@@ -60,15 +59,15 @@ func validateConfigMapCommandInput(args []string) error {
 }
 
 func executeConfigMapCleanupCommand(args []string) error {
-	if len(args) == 0 || len(config.Resource.Labels) == 0 {
-		if err := listConfigMaps(args); err != nil {
+	if len(config.Resource.Labels) == 0 {
+		if err := listConfigMaps(); err != nil {
 			return err
 		}
 		return nil
 	}
 
 	c := config.Resource
-	namespace := args[0]
+	namespace := config.Namespace
 
 	log.WithField("namespace", namespace).Debug("Looking for ConfigMaps")
 
@@ -82,22 +81,19 @@ func executeConfigMapCleanupCommand(args []string) error {
 		return fmt.Errorf("Could not retrieve unused ConfigMaps for '%s': %w", namespace, err)
 	}
 
-	if len(unusedConfigMaps) == 0 {
-		log.WithField("namespace", namespace).Info("No unused config map found")
-		return nil
-	}
-
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
 	filteredConfigMaps := cleanup.FilterResourcesByTime(unusedConfigMaps, cutOffDateTime)
 	filteredConfigMaps = cleanup.FilterResourcesByMaxCount(filteredConfigMaps, config.History.Keep)
 
-	PrintResources(filteredConfigMaps)
-	DeleteResources(
-		filteredConfigMaps,
-		config.Delete,
-		func(client *core.CoreV1Client) cfg.CoreObjectInterface {
-			return client.ConfigMaps(namespace)
-		})
+	if config.Delete {
+		DeleteResources(
+			filteredConfigMaps,
+			func(client *core.CoreV1Client) cfg.CoreObjectInterface {
+				return client.ConfigMaps(namespace)
+			})
+	} else {
+		PrintResources(filteredConfigMaps)
+	}
 
 	return nil
 }

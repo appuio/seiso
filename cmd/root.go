@@ -28,6 +28,7 @@ func Execute() error {
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringP("namespace", "n", config.Namespace, "Cluster namespace of current context")
 	rootCmd.PersistentFlags().String("log.level", config.Log.LogLevel, "Log level, one of [debug info warn error fatal]")
 	rootCmd.PersistentFlags().BoolP("log.verbose", "v", config.Log.Verbose, "Shorthand for --log.level debug")
 	rootCmd.PersistentFlags().BoolP("log.batch", "b", config.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
@@ -66,6 +67,12 @@ func parseConfig(cmd *cobra.Command, args []string) {
 		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(level)
+	}
+
+	if config.Force {
+		log.Warn("--force is deprecated and will be removed by June 30, 2020. Please use --delete instead.")
+		log.Warn("Continuing with --delete")
+		config.Delete = true
 	}
 }
 

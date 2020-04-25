@@ -1,19 +1,26 @@
 package cfg
 
 import (
+	"os"
+
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
+
+	"github.com/appuio/seiso/pkg/kubernetes"
 )
 
 type (
 	// Configuration holds a strongly-typed tree of the configuration
 	Configuration struct {
-		Git      GitConfig      `mapstructure:",squash"`
-		History  HistoryConfig  `mapstructure:",squash"`
-		Orphan   OrphanConfig   `mapstructure:",squash"`
-		Resource ResourceConfig `mapstructure:",squash"`
-		Log      LogConfig
-		Delete   bool
+		Namespace string
+		Git       GitConfig      `mapstructure:",squash"`
+		History   HistoryConfig  `mapstructure:",squash"`
+		Orphan    OrphanConfig   `mapstructure:",squash"`
+		Resource  ResourceConfig `mapstructure:",squash"`
+		Log       LogConfig
+		Delete    bool
+		Force     bool // deprecated! remove by June 30, 2020
 	}
 	// GitConfig configures git repository
 	GitConfig struct {
@@ -46,7 +53,13 @@ type (
 
 // NewDefaultConfig retrieves the hardcoded configs with sane defaults
 func NewDefaultConfig() *Configuration {
+	namespace, err := kubernetes.Namespace()
+	if err != nil {
+		log.Error("Unable to determine default namespace. Aborting.")
+		os.Exit(1)
+	}
 	return &Configuration{
+		Namespace: namespace,
 		Git: GitConfig{
 			CommitLimit:  0,
 			RepoPath:     ".",
@@ -65,6 +78,7 @@ func NewDefaultConfig() *Configuration {
 			OlderThan: "2mo",
 		},
 		Delete: false,
+		Force:  false,
 		Log: LogConfig{
 			LogLevel: "info",
 			Batch:    false,

@@ -95,7 +95,10 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 		}).Info("No inactive image stream tags found")
 		return nil
 	}
-	PrintImageTags(inactiveTags)
-	DeleteImages(inactiveTags, image, namespace, config.Delete)
+	if config.Delete {
+		DeleteImages(inactiveTags, image, namespace)
+	} else {
+		PrintImageTags(inactiveTags)
+	}
 	return nil
 }

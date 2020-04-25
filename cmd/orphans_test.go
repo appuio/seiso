@@ -37,7 +37,7 @@ func Test_splitNamespaceAndImagestream(t *testing.T) {
 		{
 			name: "ShouldThrowError_IfRepoIsInvalid",
 			args: args{
-				repo: "asdf",
+				repo: "/",
 			},
 			wantErr: true,
 		},
@@ -119,7 +119,7 @@ func Test_validateOrphanCommandInput(t *testing.T) {
 		{
 			name: "ShouldThrowError_IfInvalidImageRepository",
 			input: args{
-				args: []string{"invalid"},
+				args: []string{"/"},
 			},
 			wantErr: true,
 		},
