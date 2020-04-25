@@ -110,9 +110,13 @@ In all cases, it is assumed that the Git repository is already checked out in th
 Let's assume target branch is `a`:
 
 ```console
+seiso images history -n namespace app --keep 2
+```
+or, alternatively
+```console
 seiso images history namespace/app --keep 2
 ```
-Only the image tag `a1` will be deleted (only current branch is compared).
+Only the image tag `a1` would be deleted (only current branch is compared).
 
 ### Example: Keep no image tags
 
@@ -124,16 +128,20 @@ This would delete `a1` and `a2`, but *not* `a5`, as this image is being actively
 ### Example: Delete orphaned images
 
 ```console
+seiso images orphans -n namespace app --older-than 7d
+```
+or, alternatively
+```console
 seiso images orphans namespace/app --older-than 7d
 ```
-This will delete `a1`, `a2`, `b3` and `b4`, if we assume that `a5` is being actively used, and `c6` is younger than 7d
-(image tag push date, not commit date).
+This would delete `a1`, `a2`, `b3` and `b4`, if we assume that `a5` is being actively used,
+and `c6` is younger than 7d (image tag push date, not commit date).
 
-That means it will also look in other branches too. It also deletes amended/force-pushed commits, which do not show up
-in the history anymore, but would still be available in the registry.
+That means it will also look in other branches too. It also deletes amended/force-pushed commits,
+which do not show up in the history anymore, but would still be available in the registry.
 
-This is very useful in cases where the images from feature branches are being pushed to a `dev` namespace, but need to
-be cleaned up after some time. In the `production` namespace, we can apply different cleanup rules.
+This is very useful in cases where the images from feature branches are being pushed to a `dev` namespace,
+but need to be cleaned up after some time. In the `production` namespace, we can apply different cleanup rules.
 
 ### Example: Delete versioned image tags
 
@@ -191,14 +199,15 @@ Secrets
 ### Example: Delete unused ConfigMaps
 
 ```console
-seiso configmaps namespace -l app=example --keep 1 --older-than=1d
+seiso configmaps -n mynamespace -l app=example --keep 1 --older-than=1d
 ```
-This would delete unused ConfigMaps older than 5 hours, from the second element (sorted in descending order) and that have label `app=example`, more precisely `C4`.
+This would delete unused ConfigMaps older than 5 hours, from the second element (sorted in descending order)
+and that have label `app=example`, more precisely `C4`.
 
 ### Example: Delete unused Secrets
 
 ```console
-seiso secrets namespace -l app=example -l config=default --keep 0 --older-than=2w
+seiso secrets -n mynamespace -l app=example -l config=default --keep 0 --older-than=2w
 ```
 This would delete secrets older than 2 weeks with labels `app=example` and `config=default`, more precisely `S1 and S2`.
 
@@ -211,7 +220,7 @@ oc -n "$OPENSHIFT_PROJECT" plugin cleanup "$APP_NAME" -p "$PWD" -f=y
 ```
 becomes:
 ```console
-seiso images history "$OPENSHIFT_PROJECT/$APP_NAME" --delete
+seiso -n "$OPENSHIFT_PROJECT" image history "$APP_NAME" --delete
 ```
 
 ## Development
