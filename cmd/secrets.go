@@ -89,7 +89,7 @@ func executeSecretCleanupCommand(args []string) error {
 				return client.Secrets(namespace)
 			})
 	} else {
-		PrintResources(filteredSecrets)
+		PrintResources(filteredSecrets, namespace)
 	}
 
 	return nil
