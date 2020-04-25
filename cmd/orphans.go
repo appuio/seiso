@@ -111,7 +111,7 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 	if len(imageTagList) == 0 {
 		log.WithFields(log.Fields{
 			"\n - namespace": namespace,
-			"\n - imageName": imageName,
+			"\n - 📺 image":   imageName,
 		}).Info("No orphaned image stream tags found")
 		return nil
 	}
@@ -119,7 +119,7 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 	if config.Delete {
 		DeleteImages(imageTagList, imageName, namespace)
 	} else {
-		PrintImageTags(imageTagList)
+		PrintImageTags(imageTagList, imageName, namespace)
 	}
 
 	return nil

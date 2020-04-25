@@ -92,7 +92,7 @@ func executeConfigMapCleanupCommand(args []string) error {
 				return client.ConfigMaps(namespace)
 			})
 	} else {
-		PrintResources(filteredConfigMaps)
+		PrintResources(filteredConfigMaps, namespace)
 	}
 
 	return nil

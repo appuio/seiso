@@ -58,11 +58,11 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 		return listImages()
 	}
 	c := config.History
-	namespace, image, _ := splitNamespaceAndImagestream(args[0])
+	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
-	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, image)
+	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, imageName)
 	if err != nil {
-		return fmt.Errorf("could not retrieve image stream '%s/%s': %w", namespace, image, err)
+		return fmt.Errorf("could not retrieve image stream '%s/%s': %w", namespace, imageName, err)
 	}
 
 	var imageStreamTags []string
@@ -81,9 +81,9 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 	}
 	var matchingTags = cleanup.GetMatchingTags(&gitCandidates, &imageStreamTags, matchOption)
 
-	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, image, matchingTags)
+	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, imageName, matchingTags)
 	if err != nil {
-		return fmt.Errorf("could not retrieve active image stream tags for '%s/%s': %w", namespace, image, err)
+		return fmt.Errorf("could not retrieve active image stream tags for '%s/%s': %w", namespace, imageName, err)
 	}
 
 	inactiveTags := cleanup.GetInactiveImageTags(&activeImageStreamTags, &matchingTags)
@@ -91,14 +91,14 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 	if len(inactiveTags) == 0 {
 		log.WithFields(log.Fields{
 			"\n - namespace": namespace,
-			"\n - imageName": image,
+			"\n - 📺 image":   imageName,
 		}).Info("No inactive image stream tags found")
 		return nil
 	}
 	if config.Delete {
-		DeleteImages(inactiveTags, image, namespace)
+		DeleteImages(inactiveTags, imageName, namespace)
 	} else {
-		PrintImageTags(inactiveTags)
+		PrintImageTags(inactiveTags, imageName, namespace)
 	}
 	return nil
 }

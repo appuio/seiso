@@ -17,10 +17,10 @@ import (
 // DeleteImages deletes a list of image tags
 func DeleteImages(imageTags []string, imageName string, namespace string) {
 	for _, inactiveTag := range imageTags {
+		log.Infof("Deleting %s/%s:%s", namespace, imageName, inactiveTag)
+
 		if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
 			log.WithError(err).Errorf("Failed to delete %s/%s:%s", namespace, imageName, inactiveTag)
-		} else {
-			log.Infof("Deleted %s/%s:%s", namespace, imageName, inactiveTag)
 		}
 	}
 }
@@ -32,31 +32,31 @@ func DeleteResources(resources []cfg.KubernetesResource, resourceSelectorFunc cf
 		kind := resource.GetKind()
 		name := resource.GetName()
 
+		log.Infof("Deleting %s %s/%s", kind, namespace, name)
+
 		if err := openshift.DeleteResource(name, resourceSelectorFunc); err != nil {
 			log.WithError(err).Errorf("Failed to delete %s %s/%s", kind, namespace, name)
-		} else {
-			log.Infof("Deleted %s %s/%s", kind, namespace, name)
 		}
 	}
 }
 
 // PrintImageTags prints the given image tags line by line. In batch mode, only the tag name is printed, otherwise default
 // log with info level
-func PrintImageTags(imageTags []string) {
+func PrintImageTags(imageTags []string, imageName string, namespace string) {
 	if config.Log.Batch {
 		for _, tag := range imageTags {
 			fmt.Println(tag)
 		}
 	} else {
 		for _, tag := range imageTags {
-			log.WithField("imageTag", tag).Info("Found image tag candidate")
+			log.Infof("Found image tag candidate: %s/%s:%s", namespace, imageName, tag)
 		}
 	}
 }
 
 // PrintResources prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
 // log with info level
-func PrintResources(resources []cfg.KubernetesResource) {
+func PrintResources(resources []cfg.KubernetesResource, namespace string) {
 	if len(resources) == 0 {
 		log.Info("Nothing found to be deleted.")
 	}
@@ -66,7 +66,7 @@ func PrintResources(resources []cfg.KubernetesResource) {
 		}
 	} else {
 		for _, resource := range resources {
-			log.WithField(resource.GetKind(), resource.GetName()).Info("Found resource candidate")
+			log.Infof("Found %s candidate: %s/%s", resource.GetKind(), namespace, resource.GetName())
 		}
 	}
 }
@@ -75,7 +75,7 @@ func PrintResources(resources []cfg.KubernetesResource) {
 // global, even for commands that do not need them, which might be overkill.
 func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 	cmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of image tags.")
-	cmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Confirm deletion. Alias for --delete")
+	cmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Alias for --delete")
 	cmd.PersistentFlags().IntP("commit-limit", "l", defaults.Git.CommitLimit,
 		"Only look at the first <l> commits to compare with tags. Use 0 (zero) for all commits. Limited effect if repo is a shallow clone.")
 	cmd.PersistentFlags().StringP("repo-path", "p", defaults.Git.RepoPath, "Path to Git repository")
