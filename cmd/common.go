@@ -15,42 +15,27 @@ import (
 )
 
 // DeleteImages deletes a list of image tags
-func DeleteImages(imageTags []string, imageName string, namespace string, delete bool) {
+func DeleteImages(imageTags []string, imageName string, namespace string) {
 	for _, inactiveTag := range imageTags {
-		logEvent := log.WithFields(log.Fields{
-			"namespace": namespace,
-			"image":     imageName,
-			"imageTag":  inactiveTag,
-		})
-		if delete {
-			if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
-				logEvent.WithError(err).Error("Failed to delete")
-			} else {
-				logEvent.Info("Deleted")
-			}
+		if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
+			log.WithError(err).Errorf("Failed to delete %s/%s:%s", namespace, imageName, inactiveTag)
 		} else {
-			logEvent.Info("Should be deleted")
+			log.Infof("Deleted %s/%s:%s", namespace, imageName, inactiveTag)
 		}
 	}
 }
 
 // DeleteResources deletes a list of ConfigMaps or secrets
-func DeleteResources(resources []cfg.KubernetesResource, delete bool, resourceSelectorFunc cfg.ResourceNamespaceSelector) {
+func DeleteResources(resources []cfg.KubernetesResource, resourceSelectorFunc cfg.ResourceNamespaceSelector) {
 	for _, resource := range resources {
+		namespace := resource.GetNamespace()
 		kind := resource.GetKind()
 		name := resource.GetName()
-		logEvent := log.WithFields(log.Fields{
-			"namespace": resource.GetNamespace(),
-			kind:        name,
-		})
-		if delete {
-			if err := openshift.DeleteResource(name, resourceSelectorFunc); err != nil {
-				logEvent.WithError(err).Error("Failed to delete")
-			} else {
-				logEvent.Info("Deleted")
-			}
+
+		if err := openshift.DeleteResource(name, resourceSelectorFunc); err != nil {
+			log.WithError(err).Errorf("Failed to delete %s %s/%s", kind, namespace, name)
 		} else {
-			logEvent.Info("Should be deleted")
+			log.Infof("Deleted %s %s/%s", kind, namespace, name)
 		}
 	}
 }
@@ -72,6 +57,9 @@ func PrintImageTags(imageTags []string) {
 // PrintResources prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
 // log with info level
 func PrintResources(resources []cfg.KubernetesResource) {
+	if len(resources) == 0 {
+		log.Info("Nothing found to be deleted.")
+	}
 	if config.Log.Batch {
 		for _, resource := range resources {
 			fmt.Println(resource.GetKind() + ": " + resource.GetName())
@@ -117,12 +105,8 @@ func listImages() error {
 	return nil
 }
 
-func listConfigMaps(args []string) error {
-	namespace, err := getNamespace(args)
-	if err != nil {
-		return err
-	}
-
+func listConfigMaps() error {
+	namespace := config.Namespace
 	configMaps, err := openshift.ListConfigMaps(namespace, metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -138,11 +122,8 @@ func listConfigMaps(args []string) error {
 	return nil
 }
 
-func listSecrets(args []string) error {
-	namespace, err := getNamespace(args)
-	if err != nil {
-		return err
-	}
+func listSecrets() error {
+	namespace := config.Namespace
 	secrets, err := openshift.ListSecrets(namespace, metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -176,17 +157,5 @@ func getListOptions(labels []string) metav1.ListOptions {
 	labelSelector := fmt.Sprintf(strings.Join(labels, ","))
 	return metav1.ListOptions{
 		LabelSelector: labelSelector,
-	}
-}
-
-func getNamespace(args []string) (string, error) {
-	if len(args) == 0 {
-		namespace, err := kubernetes.Namespace()
-		if err != nil {
-			return "", err
-		}
-		return namespace, err
-	} else {
-		return args[0], nil
 	}
 }

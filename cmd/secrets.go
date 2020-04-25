@@ -19,7 +19,7 @@ This command deletes secrets that are not being used anymore.`
 var (
 	// secretCmd represents a cobra command to clean up unused secrets
 	secretCmd = &cobra.Command{
-		Use:          "secrets [NAMESPACE]",
+		Use:          "secrets",
 		Short:        "Cleans up your unused secrets in the Kubernetes cluster",
 		Long:         secretCommandLongDescription,
 		Aliases:      []string{"secret"},
@@ -40,7 +40,6 @@ func init() {
 	defaults := cfg.NewDefaultConfig()
 
 	secretCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of secrets.")
-	secretCmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Alias for --delete")
 	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the secret by these labels")
 	secretCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
 		"Keep most current <k> secrets. Does not include currently used secret (if detected).")
@@ -57,15 +56,15 @@ func validateSecretCommandInput(args []string) error {
 }
 
 func executeSecretCleanupCommand(args []string) error {
-	if len(args) == 0 || len(config.Resource.Labels) == 0 {
-		if err := listSecrets(args); err != nil {
+	if len(config.Resource.Labels) == 0 {
+		if err := listSecrets(); err != nil {
 			return err
 		}
 		return nil
 	}
 
 	c := config.Resource
-	namespace := args[0]
+	namespace := config.Namespace
 
 	log.WithField("namespace", namespace).Debug("Looking for secrets")
 
@@ -79,22 +78,19 @@ func executeSecretCleanupCommand(args []string) error {
 		return fmt.Errorf("Could not retrieve unused secrets for '%s': %w", namespace, err)
 	}
 
-	if len(unusedSecrets) == 0 {
-		log.WithField("namespace", namespace).Info("No unused secret found")
-		return nil
-	}
-
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
 	filteredSecrets := cleanup.FilterResourcesByTime(unusedSecrets, cutOffDateTime)
 	filteredSecrets = cleanup.FilterResourcesByMaxCount(filteredSecrets, config.History.Keep)
 
-	PrintResources(filteredSecrets)
-	DeleteResources(
-		filteredSecrets,
-		config.Delete,
-		func(client *core.CoreV1Client) cfg.CoreObjectInterface {
-			return client.Secrets(namespace)
-		})
+	if config.Delete {
+		DeleteResources(
+			filteredSecrets,
+			func(client *core.CoreV1Client) cfg.CoreObjectInterface {
+				return client.Secrets(namespace)
+			})
+	} else {
+		PrintResources(filteredSecrets)
+	}
 
 	return nil
 }

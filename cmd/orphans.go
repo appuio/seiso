@@ -115,8 +115,13 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 		}).Info("No orphaned image stream tags found")
 		return nil
 	}
-	PrintImageTags(imageTagList)
-	DeleteImages(imageTagList, imageName, namespace, config.Delete)
+
+	if config.Delete {
+		DeleteImages(imageTagList, imageName, namespace)
+	} else {
+		PrintImageTags(imageTagList)
+	}
+
 	return nil
 }
 
@@ -136,19 +141,24 @@ func parseCutOffDateTime(olderThan string) (time.Time, error) {
 }
 
 func splitNamespaceAndImagestream(repo string) (namespace string, image string, err error) {
-	if repo == "" || !strings.Contains(repo, "/") {
-		return "", "", errors.New("missing or invalid image repository name")
-	}
-	paths := strings.SplitAfter(repo, "/")
-	if len(paths) >= 3 {
-		namespace = paths[1]
-		image = paths[2]
+	if !strings.Contains(repo, "/") {
+		namespace = config.Namespace
+		image = repo
 	} else {
-		namespace = paths[0]
-		image = paths[1]
+		paths := strings.SplitAfter(repo, "/")
+		if len(paths) >= 3 {
+			namespace = paths[1]
+			image = paths[2]
+		} else {
+			namespace = paths[0]
+			image = paths[1]
+		}
+	}
+	if namespace == "" {
+		return "", "", errors.New("missing or invalid namespace")
 	}
 	if image == "" {
-		return "", "", errors.New("missing or invalid image repository name")
+		return "", "", errors.New("missing or invalid image name")
 	}
 	return strings.TrimSuffix(namespace, "/"), image, nil
 }
