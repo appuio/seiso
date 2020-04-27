@@ -11,7 +11,7 @@ on:
     types: [opened, reopened]
 
 jobs:
-  go-fmt:
+  lint:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -22,7 +22,5 @@ jobs:
       with:
         path: /home/runner/go/pkg/mod
         key: go-mod
-    - name: Reformat code base
-      run: make fmt
-    - name: Stop if reformatted
-      run: git diff --exit-code
+    - name: Run linters
+      run: make lint
