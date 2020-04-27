@@ -11,7 +11,7 @@ on:
     types: [opened, reopened]
 
 jobs:
-  tests:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -23,4 +23,4 @@ jobs:
         path: /home/runner/go/pkg/mod
         key: go-mod
     - name: Run test suite
-      run: make tests
+      run: make test

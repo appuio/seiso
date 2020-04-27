@@ -247,7 +247,7 @@ make fmt
 
 Run test suite:
 ```console
-make tests
+make test
 ```
 
 Build seiso binary:

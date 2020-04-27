@@ -1,14 +1,22 @@
 .PHONY: all build clean dist fmt tests
 
-all: clean fmt tests build
+all: clean lint tests build
 
 fmt:
 	@echo 'Reformat Go code ...'
 	go fmt ./...
 
-tests:
+vet:
+	@echo 'Examine Go code ...'
+	go vet ./...
+
+lint: fmt vet
+	@echo 'Check for uncommitted changes ...'
+	git diff --exit-code
+
+test:
 	@echo 'Run all tests ...'
-	go test ./...
+	go test --cover ./...
 
 build:
 	@echo 'Build seiso binary ...'
