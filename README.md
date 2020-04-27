@@ -224,7 +224,7 @@ seiso -n "$OPENSHIFT_PROJECT" image history "$APP_NAME" --delete
 ```
 We suggest cleaning up orphan image tags in addition, e.g.
 ```console
-seiso -n "$OPENSHIFT_PROJECT" image orphans "$APP_NAME" --older-than 1w --delete
+seiso -n "$OPENSHIFT_PROJECT" image orphans "$APP_NAME" --delete --older-than 1w
 ```
 
 ## Development
