@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
+	github.com/go-delve/delve v1.4.0 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/heroku/docker-registry-client v0.0.0-20190909225348-afc9e1acc3d5
 	github.com/imdario/mergo v0.3.8 // indirect
