@@ -58,15 +58,15 @@ func validateOrphanCommandInput(args []string) error {
 	if len(args) == 0 {
 		return nil
 	}
-	o := config.Orphan
+	c := config.Orphan
 	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
 		return err
 	}
-	if _, err := parseOrphanDeletionRegex(o.OrphanDeletionRegex); err != nil {
+	if _, err := parseOrphanDeletionRegex(c.OrphanDeletionRegex); err != nil {
 		return fmt.Errorf("could not parse orphan deletion pattern: %w", err)
 	}
 
-	if _, err := parseCutOffDateTime(o.OlderThan); err != nil {
+	if _, err := parseCutOffDateTime(c.OlderThan); err != nil {
 		return fmt.Errorf("could not parse older-than flag: %w", err)
 	}
 
@@ -81,7 +81,7 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 	if len(args) == 0 {
 		return listImages()
 	}
-	o := config.Orphan
+	c := config.Orphan
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
 	allImageTags, err := openshift.GetImageStreamTags(namespace, imageName)
@@ -89,8 +89,8 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 		return fmt.Errorf("could not retrieve image stream '%v/%v': %w", namespace, imageName, err)
 	}
 
-	cutOffDateTime, _ := parseCutOffDateTime(o.OlderThan)
-	orphanIncludeRegex, _ := parseOrphanDeletionRegex(o.OrphanDeletionRegex)
+	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
+	orphanIncludeRegex, _ := parseOrphanDeletionRegex(c.OrphanDeletionRegex)
 
 	matchOption := cleanup.MatchOptionPrefix
 	if config.Git.Tag {
@@ -119,6 +119,7 @@ func ExecuteOrphanCleanupCommand(args []string) error {
 	if config.Delete {
 		DeleteImages(imageTagList, imageName, namespace)
 	} else {
+		log.Infof("Showing results for --commit-limit=%d and --older-than=%s", config.Git.CommitLimit, c.OlderThan)
 		PrintImageTags(imageTagList, imageName, namespace)
 	}
 
