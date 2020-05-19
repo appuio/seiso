@@ -67,15 +67,15 @@ func NewDefaultConfig() *Configuration {
 			SortCriteria: "version",
 		},
 		History: HistoryConfig{
-			Keep: 10,
+			Keep: 3,
 		},
 		Orphan: OrphanConfig{
-			OlderThan:           "2mo",
+			OlderThan:           "1w",
 			OrphanDeletionRegex: "^[a-z0-9]{40}$",
 		},
 		Resource: ResourceConfig{
 			Labels:    []string{},
-			OlderThan: "2mo",
+			OlderThan: "1w",
 		},
 		Delete: false,
 		Force:  false,
