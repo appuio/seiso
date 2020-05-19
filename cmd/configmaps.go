@@ -42,12 +42,12 @@ func init() {
 	rootCmd.AddCommand(configMapCmd)
 	defaults := cfg.NewDefaultConfig()
 
-	configMapCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of ConfigMaps.")
-	configMapCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the config map by these labels")
+	configMapCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Effectively delete ConfigMaps found")
+	configMapCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the ConfigMap by these labels")
 	configMapCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
-		"Keep most current <k> ConfigMaps. Does not include currently used ConfigMaps (if detected).")
+		"Keep most current <k> ConfigMaps; does not include currently used ConfigMaps (if detected)")
 	configMapCmd.PersistentFlags().String("older-than", defaults.Resource.OlderThan,
-		"Delete ConfigMaps that are older than the duration. Ex.: [1y2mo3w4d5h6m7s]")
+		"Delete ConfigMaps that are older than the duration, e.g. [1y2mo3w4d5h6m7s]")
 }
 
 func validateConfigMapCommandInput(args []string) error {
@@ -92,6 +92,7 @@ func executeConfigMapCleanupCommand(args []string) error {
 				return client.ConfigMaps(namespace)
 			})
 	} else {
+		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
 		PrintResources(filteredConfigMaps, namespace)
 	}
 
