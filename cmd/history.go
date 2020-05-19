@@ -98,6 +98,7 @@ func ExecuteHistoryCleanupCommand(args []string) error {
 	if config.Delete {
 		DeleteImages(inactiveTags, imageName, namespace)
 	} else {
+		log.Infof("Showing results for --commit-limit=%d and --keep=%d", config.Git.CommitLimit, c.Keep)
 		PrintImageTags(inactiveTags, imageName, namespace)
 	}
 	return nil
