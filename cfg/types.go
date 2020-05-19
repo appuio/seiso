@@ -1,8 +1,6 @@
 package cfg
 
 import (
-	"os"
-
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -55,8 +53,8 @@ type (
 func NewDefaultConfig() *Configuration {
 	namespace, err := kubernetes.Namespace()
 	if err != nil {
-		log.Error("Unable to determine default namespace. Aborting.")
-		os.Exit(1)
+		log.Warning("Unable to determine default namespace. Falling back to: default")
+		namespace = "default"
 	}
 	return &Configuration{
 		Namespace: namespace,
