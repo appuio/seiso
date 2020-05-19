@@ -39,12 +39,12 @@ func init() {
 	rootCmd.AddCommand(secretCmd)
 	defaults := cfg.NewDefaultConfig()
 
-	secretCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Confirm deletion of secrets.")
-	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the secret by these labels")
+	secretCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Effectively delete Secrets found")
+	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the Secret by these labels")
 	secretCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
-		"Keep most current <k> secrets. Does not include currently used secret (if detected).")
+		"Keep most current <k> Secrets; does not include currently used secret (if detected)")
 	secretCmd.PersistentFlags().String("older-than", defaults.Resource.OlderThan,
-		"Delete secrets that are older than the duration. Ex.: [1y2mo3w4d5h6m7s]")
+		"Delete Secrets that are older than the duration, e.g. [1y2mo3w4d5h6m7s]")
 }
 
 func validateSecretCommandInput(args []string) error {
@@ -89,6 +89,7 @@ func executeSecretCleanupCommand(args []string) error {
 				return client.Secrets(namespace)
 			})
 	} else {
+		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
 		PrintResources(filteredSecrets, namespace)
 	}
 
