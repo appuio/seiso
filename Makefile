@@ -27,5 +27,6 @@ dist:
 	goreleaser release --snapshot --rm-dist --skip-sign
 
 clean:
-	@echo 'Clean up build artifacts ...'
+	@echo 'Clean up test cache and build artifacts ...'
+	go clean -testcache
 	rm -rf seiso dist/
