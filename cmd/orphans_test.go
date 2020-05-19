@@ -28,6 +28,14 @@ func Test_splitNamespaceAndImagestream(t *testing.T) {
 			expectedImage:     "image",
 		},
 		{
+			name: "ShouldReturnActiveNamespace_IfRepoDoesNotContainNamespace",
+			args: args{
+				repo: "image",
+			},
+			expectedNamespace: "currently-active-ns",
+			expectedImage:     "image",
+		},
+		{
 			name: "ShouldThrowError_IfRepoDoesNotContainImage",
 			args: args{
 				repo: "namespace/",
@@ -57,6 +65,7 @@ func Test_splitNamespaceAndImagestream(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			config.Namespace = "currently-active-ns"
 			namespace, image, err := splitNamespaceAndImagestream(tt.args.repo)
 			if tt.wantErr {
 				assert.Error(t, err)

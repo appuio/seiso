@@ -6,7 +6,6 @@ import (
 
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/git"
-	"github.com/appuio/seiso/pkg/kubernetes"
 	"github.com/appuio/seiso/pkg/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -86,10 +85,7 @@ func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 }
 
 func listImages() error {
-	namespace, err := kubernetes.Namespace()
-	if err != nil {
-		return err
-	}
+	namespace := config.Namespace
 	imageStreams, err := openshift.ListImageStreams(namespace)
 	if err != nil {
 		return err
