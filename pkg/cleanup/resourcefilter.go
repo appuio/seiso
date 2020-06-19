@@ -8,6 +8,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type Filter interface {
+	FilterResourcesByTime()
+	FilterResourcesByMaxCount()
+}
+
+type FilterResources struct {
+	resources []cfg.KubernetesResource
+}
+
 //FilterResourcesByTime returns resources which are older than specified date
 func FilterResourcesByTime(resources []cfg.KubernetesResource, olderThan time.Time) (filteredResources []cfg.KubernetesResource) {
 	log.WithFields(log.Fields{

@@ -102,7 +102,7 @@ func ListImageStreams(namespace string) ([]imagev1.ImageStream, error) {
 
 // ListConfigMaps returns a list of ConfigMaps from a namspace that have these labels
 func ListConfigMaps(namespace string, listOptions metav1.ListOptions) (resources []cfg.KubernetesResource, err error) {
-	coreClient, err := kubernetes.NewCoreV1Client()
+	coreClient, err := kubernetes.Init().NewCoreV1Client()
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +124,10 @@ func ListConfigMaps(namespace string, listOptions metav1.ListOptions) (resources
 	return resources, nil
 }
 
-// ListSecrets returns a list of secrets from a namspace
+// ListSecrets returns a list of secrets from a namespace
 func ListSecrets(namespace string, listOptions metav1.ListOptions) (resources []cfg.KubernetesResource, err error) {
 
-	coreClient, err := kubernetes.NewCoreV1Client()
+	coreClient, err := kubernetes.Init().NewCoreV1Client()
 	if err != nil {
 		return nil, err
 	}
@@ -183,11 +183,6 @@ func ListUnusedResources(namespace string, resources []cfg.KubernetesResource) (
 }
 
 // DeleteResource permanently deletes a resource
-func DeleteResource(resource string, resourceSelectorFunc cfg.ResourceNamespaceSelector) error {
-	coreClient, err := kubernetes.NewCoreV1Client()
-	if err != nil {
-		return err
-	}
-
-	return resourceSelectorFunc(coreClient).Delete(resource, &metav1.DeleteOptions{})
+func DeleteResource(resource string, client *kubernetes.CoreV1ClientInt, resourceSelectorFunc cfg.ResourceNamespaceSelector) error {
+	return resourceSelectorFunc(*client).Delete(resource, &metav1.DeleteOptions{})
 }

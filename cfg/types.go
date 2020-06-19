@@ -1,11 +1,9 @@
 package cfg
 
 import (
+	"github.com/appuio/seiso/pkg/kubernetes"
 	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
-
-	"github.com/appuio/seiso/pkg/kubernetes"
 )
 
 type (
@@ -91,4 +89,4 @@ type CoreObjectInterface interface {
 }
 
 //ResourceNamespaceSelector gets resource from client
-type ResourceNamespaceSelector func(*core.CoreV1Client) CoreObjectInterface
+type ResourceNamespaceSelector func(kubernetes.CoreV1ClientInt) CoreObjectInterface

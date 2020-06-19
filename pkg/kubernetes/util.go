@@ -44,7 +44,7 @@ func (k *kubernetesImpl) ResourceContains(namespace, value string, resource sche
 
 func (k *kubernetesImpl) initClient() error {
 	if k.client == nil {
-		client, err := NewDynamicClient()
+		client, err := Init().NewDynamicClient()
 		if err != nil {
 			return err
 		}

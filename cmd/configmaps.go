@@ -2,21 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/appuio/seiso/pkg/kubernetes"
+	"github.com/appuio/seiso/pkg/resource"
 
 	"github.com/appuio/seiso/cfg"
-	"github.com/appuio/seiso/pkg/cleanup"
-	"github.com/appuio/seiso/pkg/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
 	configMapCommandLongDescription = `Sometimes ConfigMaps are left unused in the Kubernetes cluster.
 This command deletes ConfigMaps that are not being used anymore.`
 )
-
-var configMapLog *log.Entry
 
 var (
 	// configMapCmd represents a cobra command to clean up unused ConfigMaps
@@ -33,7 +30,17 @@ var (
 				cmd.Usage()
 				return err
 			}
-			return executeConfigMapCleanupCommand(args)
+			client, err := kubernetes.Init().NewCoreV1Client()
+			if err != nil {
+				return err
+			}
+			resources := resource.ConfigMaps{
+				&resource.GenericResources{
+					Client: client,
+					Namespace: config.Namespace,
+				},
+			}
+			return executeConfigMapCleanupCommand(resources, config)
 		},
 	}
 )
@@ -58,42 +65,49 @@ func validateConfigMapCommandInput(args []string) error {
 	return nil
 }
 
-func executeConfigMapCleanupCommand(args []string) error {
-	if len(config.Resource.Labels) == 0 {
-		if err := listConfigMaps(); err != nil {
+func executeConfigMapCleanupCommand(resources resource.ConfigMapResources, config *cfg.Configuration) error {
+	namespace := resources.GetNamespace()
+	labels := config.Resource.Labels
+	if len(labels) == 0 {
+		configMapNames, labels, err := resources.ListConfigMaps()
+		if err != nil {
 			return err
 		}
+		log.WithFields(log.Fields{
+			"\n - namespace":    namespace,
+			"\n - 🔓 configMaps": configMapNames,
+			"\n - 🎫 labels":     labels,
+		}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
 		return nil
 	}
 
-	c := config.Resource
-	namespace := config.Namespace
-
 	log.WithField("namespace", namespace).Debug("Looking for ConfigMaps")
 
-	foundConfigMaps, err := openshift.ListConfigMaps(namespace, getListOptions(c.Labels))
+	err := resources.LoadConfigMaps(getListOptions(labels))
 	if err != nil {
-		return fmt.Errorf("Could not retrieve ConfigMaps with labels '%s' for '%s': %w", c.Labels, namespace, err)
+		return fmt.Errorf("could not retrieve ConfigMaps with labels '%s' for '%s': %w", labels, namespace, err)
 	}
 
-	unusedConfigMaps, err := openshift.ListUnusedResources(namespace, foundConfigMaps)
+	err = resources.FilterUsed()
 	if err != nil {
-		return fmt.Errorf("Could not retrieve unused ConfigMaps for '%s': %w", namespace, err)
+		return fmt.Errorf("could not retrieve unused configMaps for '%s': %w", namespace, err)
 	}
-
-	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
-	filteredConfigMaps := cleanup.FilterResourcesByTime(unusedConfigMaps, cutOffDateTime)
-	filteredConfigMaps = cleanup.FilterResourcesByMaxCount(filteredConfigMaps, config.History.Keep)
+	olderThan := config.Resource.OlderThan
+	keep := config.History.Keep
+	cutOffDateTime, _ := parseCutOffDateTime(olderThan)
+	resources.FilterByTime(cutOffDateTime)
+	resources.FilterByMaxCount(keep)
 
 	if config.Delete {
-		DeleteResources(
-			filteredConfigMaps,
-			func(client *core.CoreV1Client) cfg.CoreObjectInterface {
-				return client.ConfigMaps(namespace)
-			})
+		err := resources.Delete(func(client kubernetes.CoreV1ClientInt) cfg.CoreObjectInterface {
+			return client.ConfigMaps(namespace)
+		})
+		if err != nil {
+			log.WithError(err).Errorf("Failed to complete deletion in namespace %s", namespace)
+		}
 	} else {
-		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
-		PrintResources(filteredConfigMaps, namespace)
+		log.Infof("showing results for --keep=%d and --older-than=%s", keep, olderThan)
+		resources.Print(config.Log.Batch)
 	}
 
 	return nil
