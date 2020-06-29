@@ -12,19 +12,19 @@ type (
 	// Configuration holds a strongly-typed tree of the configuration
 	Configuration struct {
 		Namespace string
-		Git       GitConfig      `mapstructure:",squash"`
-		History   HistoryConfig  `mapstructure:",squash"`
-		Orphan    OrphanConfig   `mapstructure:",squash"`
-		Resource  ResourceConfig `mapstructure:",squash"`
+		Git       GitConfig      `koanf:",squash"`
+		History   HistoryConfig  `koanf:",squash"`
+		Orphan    OrphanConfig   `koanf:",squash"`
+		Resource  ResourceConfig `koanf:",squash"`
 		Log       LogConfig
 		Delete    bool
 	}
 	// GitConfig configures git repository
 	GitConfig struct {
-		CommitLimit  int    `mapstructure:"commit-limit"`
-		RepoPath     string `mapstructure:"repo-path"`
-		Tag          bool   `mapstructure:"tags"`
-		SortCriteria string `mapstructure:"sort"`
+		CommitLimit  int    `koanf:"commit-limit"`
+		RepoPath     string `koanf:"repo-path"`
+		Tag          bool   `koanf:"tags"`
+		SortCriteria string `koanf:"sort"`
 	}
 	// HistoryConfig configures the history command behaviour
 	HistoryConfig struct {
@@ -32,19 +32,19 @@ type (
 	}
 	// OrphanConfig configures the orphans command behaviour
 	OrphanConfig struct {
-		OlderThan           string `mapstructure:"older-than"`
-		OrphanDeletionRegex string `mapstructure:"deletion-pattern"`
+		OlderThan           string `koanf:"older-than"`
+		OrphanDeletionRegex string `koanf:"deletion-pattern"`
 	}
 	// LogConfig configures the log
 	LogConfig struct {
-		LogLevel string
+		LogLevel string `koanf:"level"`
 		Batch    bool
 		Verbose  bool
 	}
 	// ResourceConfig configures the resources and secrets
 	ResourceConfig struct {
-		Labels    []string `mapstructure:"label"`
-		OlderThan string   `mapstructure:"older-than"`
+		Labels    []string `koanf:"label"`
+		OlderThan string   `koanf:"older-than"`
 	}
 )
 
