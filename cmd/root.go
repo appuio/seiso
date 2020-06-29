@@ -6,10 +6,12 @@ import (
 	"strings"
 
 	"github.com/appuio/seiso/cfg"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/posflag"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -20,6 +22,7 @@ var (
 		PersistentPreRun: parseConfig,
 	}
 	config = cfg.NewDefaultConfig()
+	k      = koanf.New(".")
 )
 
 // Execute is the main entrypoint of the CLI, it executes child commands as given by the user-defined flags and arguments.
@@ -41,11 +44,20 @@ func initRootConfig() {
 
 // parseConfig reads the flags and ENV vars
 func parseConfig(cmd *cobra.Command, args []string) {
-	bindFlags(cmd.PersistentFlags())
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
-	viper.AutomaticEnv()
 
-	if err := viper.Unmarshal(&config); err != nil {
+	err := k.Load(env.Provider("", ".", func(s string) string {
+		// First replace the double underscore with . as the hierarchy delimiter
+		s = strings.Replace(strings.ToLower(s), "__", ".", -1)
+		// Now replace the remaining single underscore with dashes to allow flags with dashes in it.
+		return strings.Replace(s, "_", "-", -1)
+	}), nil)
+	if err != nil {
+		log.WithError(err).Fatal("Could not load environment variables")
+	}
+
+	bindFlags(cmd.PersistentFlags())
+
+	if err := k.Unmarshal("", &config); err != nil {
 		log.WithError(err).Fatal("Could not read config")
 	}
 
@@ -71,7 +83,8 @@ func parseConfig(cmd *cobra.Command, args []string) {
 }
 
 func bindFlags(flagSet *pflag.FlagSet) {
-	if err := viper.BindPFlags(flagSet); err != nil {
+	err := k.Load(posflag.Provider(flagSet, ".", k), nil)
+	if err != nil {
 		log.WithError(err).Fatal("Could not bind flags")
 	}
 }
