@@ -74,7 +74,6 @@ func PrintResources(resources []cfg.KubernetesResource, namespace string) {
 // global, even for commands that do not need them, which might be overkill.
 func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 	cmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Effectively delete image tags found")
-	cmd.PersistentFlags().BoolP("force", "f", defaults.Delete, "(deprecated) Alias for --delete")
 	cmd.PersistentFlags().IntP("commit-limit", "l", defaults.Git.CommitLimit,
 		"Only look at the first <l> commits to compare with tags. Use 0 (zero) for all commits. Limited effect if repo is a shallow clone.")
 	cmd.PersistentFlags().StringP("repo-path", "p", defaults.Git.RepoPath, "Path to Git repository")
