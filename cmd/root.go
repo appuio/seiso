@@ -68,12 +68,6 @@ func parseConfig(cmd *cobra.Command, args []string) {
 	} else {
 		log.SetLevel(level)
 	}
-
-	if config.Force {
-		log.Warn("--force is deprecated and will be removed by June 30, 2020. Please use --delete instead.")
-		log.Warn("Continuing with --delete")
-		config.Delete = true
-	}
 }
 
 func bindFlags(flagSet *pflag.FlagSet) {

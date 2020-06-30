@@ -18,7 +18,6 @@ type (
 		Resource  ResourceConfig `mapstructure:",squash"`
 		Log       LogConfig
 		Delete    bool
-		Force     bool // deprecated! remove by June 30, 2020
 	}
 	// GitConfig configures git repository
 	GitConfig struct {
@@ -76,7 +75,6 @@ func NewDefaultConfig() *Configuration {
 			OlderThan: "1w",
 		},
 		Delete: false,
-		Force:  false,
 		Log: LogConfig{
 			LogLevel: "info",
 			Batch:    false,

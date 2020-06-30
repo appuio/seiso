@@ -243,7 +243,7 @@ seiso -n "$OPENSHIFT_PROJECT" image orphans "$APP_NAME" --delete --older-than 1w
 
 Requirements:
 
-* go 1.13
+* go 1.14
 * goreleaser
 * Docker
 
