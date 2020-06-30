@@ -281,8 +281,11 @@ docker run --rm -it appuio/seiso:<tag>
 
 Push a git tag with the scheme `vX.Y.Z` (semver).
 
-## License
+## Environment variables
 
-This project is BSD 3-Clause licensed (see LICENSE file for details).
-
-This project uses other OpenSource software as listed in `go.mod` and indirectly in `go.sum` files. All their licenses apply too.
+All CLI flags can be specified also with Environment variables. Just replace dashes with underscore and capitalize the name,
+e.g.
+```console
+export KEEP=4
+seiso images history namespace/app
+```
