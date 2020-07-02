@@ -21,8 +21,8 @@ var (
 		Short:            "Keeps your Kubernetes projects clean",
 		PersistentPreRun: parseConfig,
 	}
-	config = cfg.NewDefaultConfig()
-	k      = koanf.New(".")
+	config        = cfg.NewDefaultConfig()
+	koanfInstance = koanf.New(".")
 )
 
 // Execute is the main entrypoint of the CLI, it executes child commands as given by the user-defined flags and arguments.
@@ -45,19 +45,10 @@ func initRootConfig() {
 // parseConfig reads the flags and ENV vars
 func parseConfig(cmd *cobra.Command, args []string) {
 
-	err := k.Load(env.Provider("", ".", func(s string) string {
-		// First replace the double underscore with . as the hierarchy delimiter
-		s = strings.Replace(strings.ToLower(s), "__", ".", -1)
-		// Now replace the remaining single underscore with dashes to allow flags with dashes in it.
-		return strings.Replace(s, "_", "-", -1)
-	}), nil)
-	if err != nil {
-		log.WithError(err).Fatal("Could not load environment variables")
-	}
-
+	loadEnvironmentVariables()
 	bindFlags(cmd.PersistentFlags())
 
-	if err := k.Unmarshal("", &config); err != nil {
+	if err := koanfInstance.Unmarshal("", &config); err != nil {
 		log.WithError(err).Fatal("Could not read config")
 	}
 
@@ -82,8 +73,26 @@ func parseConfig(cmd *cobra.Command, args []string) {
 	}
 }
 
+func loadEnvironmentVariables() {
+	prefix := "SEISO_"
+	err := koanfInstance.Load(env.Provider(prefix, ".", func(s string) string {
+		/*
+			Configuration can contain hierarchies (YAML, etc.) and CLI flags dashes. To read environment variables with
+			hierarchies and dashes we replace the hierarchy delimiter with double underscore and dashes with single underscore,
+			so that parent.child-with-dash becomes PARENT__CHILD_WITH_DASH
+		*/
+		s = strings.TrimPrefix(s, prefix)
+		s = strings.Replace(strings.ToLower(s), "__", ".", -1)
+		s = strings.Replace(strings.ToLower(s), "_", "-", -1)
+		return s
+	}), nil)
+	if err != nil {
+		log.WithError(err).Fatal("Could not load environment variables")
+	}
+}
+
 func bindFlags(flagSet *pflag.FlagSet) {
-	err := k.Load(posflag.Provider(flagSet, ".", k), nil)
+	err := koanfInstance.Load(posflag.Provider(flagSet, ".", koanfInstance), nil)
 	if err != nil {
 		log.WithError(err).Fatal("Could not bind flags")
 	}
