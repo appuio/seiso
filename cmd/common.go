@@ -9,7 +9,6 @@ import (
 	"github.com/appuio/seiso/pkg/openshift"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/thoas/go-funk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,21 +19,6 @@ func DeleteImages(imageTags []string, imageName string, namespace string) {
 
 		if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
 			log.WithError(err).Errorf("Failed to delete %s/%s:%s", namespace, imageName, inactiveTag)
-		}
-	}
-}
-
-// DeleteResources deletes a list of ConfigMaps or secrets
-func DeleteResources(resources []cfg.KubernetesResource, resourceSelectorFunc cfg.ResourceNamespaceSelector) {
-	for _, resource := range resources {
-		namespace := resource.GetNamespace()
-		kind := resource.GetKind()
-		name := resource.GetName()
-
-		log.Infof("Deleting %s %s/%s", kind, namespace, name)
-
-		if err := openshift.DeleteResource(name, resourceSelectorFunc); err != nil {
-			log.WithError(err).Errorf("Failed to delete %s %s/%s", kind, namespace, name)
 		}
 	}
 }
@@ -55,17 +39,17 @@ func PrintImageTags(imageTags []string, imageName string, namespace string) {
 
 // PrintResources prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
 // log with info level
-func PrintResources(resources []cfg.KubernetesResource, namespace string) {
+func PrintResources(resources []metav1.ObjectMeta, kind string) {
 	if len(resources) == 0 {
 		log.Info("Nothing found to be deleted.")
 	}
 	if config.Log.Batch {
 		for _, resource := range resources {
-			fmt.Println(resource.GetKind() + ": " + resource.GetName())
+			fmt.Println(kind + ": " + resource.GetName())
 		}
 	} else {
 		for _, resource := range resources {
-			log.Infof("Found %s candidate: %s/%s", resource.GetKind(), namespace, resource.GetName())
+			log.Infof("Found %s candidate: %s/%s", kind, resource.Namespace, resource.GetName())
 		}
 	}
 }
@@ -98,53 +82,6 @@ func listImages() error {
 		"\n - 📺 images":  imageNames,
 	}).Info("Please select an image. The following images are available:")
 	return nil
-}
-
-func listConfigMaps() error {
-	namespace := config.Namespace
-	configMaps, err := openshift.ListConfigMaps(namespace, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	configMapNames, labels := getNamesAndLabels(configMaps)
-
-	log.WithFields(log.Fields{
-		"\n - namespace":    namespace,
-		"\n - 🔓 configMaps": configMapNames,
-		"\n - 🎫 labels":     labels,
-	}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
-	return nil
-}
-
-func listSecrets() error {
-	namespace := config.Namespace
-	secrets, err := openshift.ListSecrets(namespace, metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	secretNames, labels := getNamesAndLabels(secrets)
-	log.WithFields(log.Fields{
-		"\n - namespace": namespace,
-		"\n - 🔐 secrets": secretNames,
-		"\n - 🎫 labels":  labels,
-	}).Info("Please use labels to select Secrets. The following Secrets and Labels are available:")
-	return nil
-}
-
-func getNamesAndLabels(resources []cfg.KubernetesResource) (resourceNames, labels []string) {
-	for _, resource := range resources {
-		resourceNames = append(resourceNames, resource.GetName())
-		for key, element := range resource.GetLabels() {
-			label := key + "=" + element
-			if !funk.ContainsString(labels, label) {
-				labels = append(labels, label)
-			}
-		}
-	}
-
-	return resourceNames, labels
 }
 
 //GetListOptions returns a ListOption object based on labels

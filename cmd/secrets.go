@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/appuio/seiso/cfg"
-	"github.com/appuio/seiso/pkg/cleanup"
-	"github.com/appuio/seiso/pkg/openshift"
+	"github.com/appuio/seiso/pkg/kubernetes"
+	"github.com/appuio/seiso/pkg/secret"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
@@ -26,11 +24,21 @@ var (
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateSecretCommandInput(args); err != nil {
+			if err := validateSecretCommandInput(); err != nil {
 				cmd.Usage()
 				return err
 			}
-			return executeSecretCleanupCommand(args)
+
+			coreClient, err := kubernetes.NewCoreV1Client()
+			if err != nil {
+				return fmt.Errorf("cannot initiate kubernetes core client")
+			}
+
+			secretService := secret.NewSecretsService(
+				coreClient.Secrets(config.Namespace),
+				kubernetes.New(),
+				secret.Configuration{Batch: config.Log.Batch})
+			return executeSecretCleanupCommand(secretService)
 		},
 	}
 )
@@ -47,50 +55,51 @@ func init() {
 		"Delete Secrets that are older than the duration, e.g. [1y2mo3w4d5h6m7s]")
 }
 
-func validateSecretCommandInput(args []string) error {
-
+func validateSecretCommandInput() error {
 	if _, err := parseCutOffDateTime(config.Resource.OlderThan); err != nil {
 		return fmt.Errorf("Could not parse older-than flag: %w", err)
 	}
 	return nil
 }
 
-func executeSecretCleanupCommand(args []string) error {
+func executeSecretCleanupCommand(service secret.Service) error {
+	c := config.Resource
+	namespace := config.Namespace
 	if len(config.Resource.Labels) == 0 {
-		if err := listSecrets(); err != nil {
+		secrets, labels, err := service.ListNamesAndLabels()
+		if err != nil {
 			return err
 		}
+		log.WithFields(log.Fields{
+			"\n - namespace": namespace,
+			"\n - 🔐 secrets": secrets,
+			"\n - 🎫 labels":  labels,
+		}).Info("Please use labels to select Secrets. The following Secrets and Labels are available:")
 		return nil
 	}
 
-	c := config.Resource
-	namespace := config.Namespace
-
 	log.WithField("namespace", namespace).Debug("Looking for secrets")
 
-	foundSecrets, err := openshift.ListSecrets(namespace, getListOptions(c.Labels))
+	foundSecrets, err := service.List(getListOptions(c.Labels))
 	if err != nil {
 		return fmt.Errorf("Could not retrieve secrets with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
-	unusedSecrets, err := openshift.ListUnusedResources(namespace, foundSecrets)
+	unusedSecrets, err := service.GetUnused(namespace, foundSecrets)
 	if err != nil {
 		return fmt.Errorf("Could not retrieve unused secrets for '%s': %w", namespace, err)
 	}
 
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
-	filteredSecrets := cleanup.FilterResourcesByTime(unusedSecrets, cutOffDateTime)
-	filteredSecrets = cleanup.FilterResourcesByMaxCount(filteredSecrets, config.History.Keep)
+
+	filteredSecrets := service.FilterByTime(unusedSecrets, cutOffDateTime)
+	filteredSecrets = service.FilterByMaxCount(filteredSecrets, config.History.Keep)
 
 	if config.Delete {
-		DeleteResources(
-			filteredSecrets,
-			func(client *core.CoreV1Client) cfg.CoreObjectInterface {
-				return client.Secrets(namespace)
-			})
+		service.Delete(filteredSecrets)
 	} else {
 		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
-		PrintResources(filteredSecrets, namespace)
+		service.Print(filteredSecrets)
 	}
 
 	return nil

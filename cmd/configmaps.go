@@ -2,21 +2,17 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/appuio/seiso/cfg"
-	"github.com/appuio/seiso/pkg/cleanup"
-	"github.com/appuio/seiso/pkg/openshift"
+	"github.com/appuio/seiso/pkg/configmap"
+	"github.com/appuio/seiso/pkg/kubernetes"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
 	configMapCommandLongDescription = `Sometimes ConfigMaps are left unused in the Kubernetes cluster.
 This command deletes ConfigMaps that are not being used anymore.`
 )
-
-var configMapLog *log.Entry
 
 var (
 	// configMapCmd represents a cobra command to clean up unused ConfigMaps
@@ -29,11 +25,21 @@ var (
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
-			if err := validateConfigMapCommandInput(args); err != nil {
+			if err := validateConfigMapCommandInput(); err != nil {
 				cmd.Usage()
 				return err
 			}
-			return executeConfigMapCleanupCommand(args)
+
+			coreClient, err := kubernetes.NewCoreV1Client()
+			if err != nil {
+				return fmt.Errorf("cannot initiate kubernetes core client")
+			}
+
+			configMapService := configmap.NewConfigMapsService(
+				coreClient.ConfigMaps(config.Namespace),
+				kubernetes.New(),
+				configmap.Configuration{Batch: config.Log.Batch})
+			return executeConfigMapCleanupCommand(configMapService)
 		},
 	}
 )
@@ -50,7 +56,7 @@ func init() {
 		"Delete ConfigMaps that are older than the duration, e.g. [1y2mo3w4d5h6m7s]")
 }
 
-func validateConfigMapCommandInput(args []string) error {
+func validateConfigMapCommandInput() error {
 
 	if _, err := parseCutOffDateTime(config.Resource.OlderThan); err != nil {
 		return fmt.Errorf("Could not parse older-than flag: %w", err)
@@ -58,42 +64,43 @@ func validateConfigMapCommandInput(args []string) error {
 	return nil
 }
 
-func executeConfigMapCleanupCommand(args []string) error {
+func executeConfigMapCleanupCommand(service configmap.Service) error {
+	c := config.Resource
+	namespace := config.Namespace
 	if len(config.Resource.Labels) == 0 {
-		if err := listConfigMaps(); err != nil {
+		configMaps, labels, err := service.ListNamesAndLabels()
+		if err != nil {
 			return err
 		}
+		log.WithFields(log.Fields{
+			"\n - namespace":    namespace,
+			"\n - 🔐 configMaps": configMaps,
+			"\n - 🎫 labels":     labels,
+		}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
 		return nil
 	}
 
-	c := config.Resource
-	namespace := config.Namespace
-
 	log.WithField("namespace", namespace).Debug("Looking for ConfigMaps")
 
-	foundConfigMaps, err := openshift.ListConfigMaps(namespace, getListOptions(c.Labels))
+	foundConfigMaps, err := service.List(getListOptions(c.Labels))
 	if err != nil {
-		return fmt.Errorf("Could not retrieve ConfigMaps with labels '%s' for '%s': %w", c.Labels, namespace, err)
+		return fmt.Errorf("Could not retrieve config maps with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
-	unusedConfigMaps, err := openshift.ListUnusedResources(namespace, foundConfigMaps)
+	unusedConfigMaps, err := service.GetUnused(namespace, foundConfigMaps)
 	if err != nil {
-		return fmt.Errorf("Could not retrieve unused ConfigMaps for '%s': %w", namespace, err)
+		return fmt.Errorf("Could not retrieve unused config maps for '%s': %w", namespace, err)
 	}
 
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
-	filteredConfigMaps := cleanup.FilterResourcesByTime(unusedConfigMaps, cutOffDateTime)
-	filteredConfigMaps = cleanup.FilterResourcesByMaxCount(filteredConfigMaps, config.History.Keep)
+	filteredConfigMaps := service.FilterByTime(unusedConfigMaps, cutOffDateTime)
+	filteredConfigMaps = service.FilterByMaxCount(filteredConfigMaps, config.History.Keep)
 
 	if config.Delete {
-		DeleteResources(
-			filteredConfigMaps,
-			func(client *core.CoreV1Client) cfg.CoreObjectInterface {
-				return client.ConfigMaps(namespace)
-			})
+		service.Delete(filteredConfigMaps)
 	} else {
 		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
-		PrintResources(filteredConfigMaps, namespace)
+		service.Print(filteredConfigMaps)
 	}
 
 	return nil
