@@ -78,9 +78,8 @@ func TestGetActiveImageStreamTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			predefinedResources = tt.resources
 			helper = tt.helperMock
-			for _, resource := range predefinedResources {
+			for _, resource := range PredefinedResources {
 				for _, tag := range tt.args.imageStreamTags {
 					value := funk.ContainsString(tt.wantActiveImageStreamTags, tag)
 					var err error = nil

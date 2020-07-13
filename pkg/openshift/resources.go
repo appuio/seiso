@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	predefinedResources = []schema.GroupVersionResource{
+	PredefinedResources = []schema.GroupVersionResource{
 		{Version: "v1", Resource: "pods"},
 		{Group: "apps", Version: "v1", Resource: "statefulsets"},
 		{Group: "apps", Version: "v1", Resource: "deployments"},
@@ -34,7 +34,7 @@ func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []s
 	if len(imageStreamTags) == 0 {
 		return []string{}, nil
 	}
-	funk.ForEach(predefinedResources, func(predefinedResource schema.GroupVersionResource) {
+	funk.ForEach(PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
 		funk.ForEach(imageStreamTags, func(imageStreamTag string) {
 			if funk.ContainsString(activeImageStreamTags, imageStreamTag) {
 				// already marked as existing, skip this
@@ -124,35 +124,10 @@ func ListConfigMaps(namespace string, listOptions metav1.ListOptions) (resources
 	return resources, nil
 }
 
-// ListSecrets returns a list of secrets from a namspace
-func ListSecrets(namespace string, listOptions metav1.ListOptions) (resources []cfg.KubernetesResource, err error) {
-
-	coreClient, err := kubernetes.NewCoreV1Client()
-	if err != nil {
-		return nil, err
-	}
-
-	secrets, err := coreClient.Secrets(namespace).List(listOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, secret := range secrets.Items {
-		resource := cfg.NewSecretResource(
-			secret.GetName(),
-			secret.GetNamespace(),
-			secret.GetCreationTimestamp().Time,
-			secret.GetLabels())
-		resources = append(resources, resource)
-	}
-
-	return resources, nil
-}
-
 // ListUnusedResources lists resources that are unused
 func ListUnusedResources(namespace string, resources []cfg.KubernetesResource) (unusedResources []cfg.KubernetesResource, funcErr error) {
 	var usedResources []cfg.KubernetesResource
-	funk.ForEach(predefinedResources, func(predefinedResource schema.GroupVersionResource) {
+	funk.ForEach(PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
 		funk.ForEach(resources, func(resource cfg.KubernetesResource) {
 
 			resourceName := resource.GetName()
