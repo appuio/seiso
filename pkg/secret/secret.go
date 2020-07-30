@@ -17,7 +17,7 @@ import (
 
 type (
 	Service interface {
-		ListNamesAndLabels() (resourceNames, labels []string, err error)
+		PrintNamesAndLabels(namespace string) error
 		List(listOptions metav1.ListOptions) (resources []v1.Secret, err error)
 		GetUnused(namespace string, secrets []v1.Secret) (unusedSecrets []v1.Secret, funcErr error)
 		Delete(secrets []v1.Secret)
@@ -27,18 +27,17 @@ type (
 	}
 
 	SecretsService struct {
-		configuration Configuration
+		configuration ServiceConfiguration
 		client        core.SecretInterface
 		helper        kubernetes.Kubernetes
 	}
+	ServiceConfiguration struct {
+		Batch bool
+	}
 )
 
-type Configuration struct {
-	Batch bool
-}
-
 // NewSecretsService creates a new Service instance
-func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes, configuration Configuration) Service {
+func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes, configuration ServiceConfiguration) Service {
 	return SecretsService{
 		client:        client,
 		helper:        helper,
@@ -46,15 +45,22 @@ func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes
 	}
 }
 
-// ListNamesAndLabels return the names and labels of all secrets
-func (ss SecretsService) ListNamesAndLabels() (resourceNames, labels []string, err error) {
+// PrintNamesAndLabels return the names and labels of all secrets
+func (ss SecretsService) PrintNamesAndLabels(namespace string) error {
 	secrets, err := ss.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
 	var objectMetas []metav1.ObjectMeta
 	for _, s := range secrets {
 		objectMetas = append(objectMetas, s.ObjectMeta)
 	}
-	secretNames, labels := util.GetNamesAndLabels(objectMetas)
-	return secretNames, labels, nil
+	log.Infof("Following Secrets are available in namespace %s", namespace)
+	namesAndLabels := util.GetNamesAndLabels(objectMetas)
+	for name, labels := range namesAndLabels {
+		log.Infof("Name: %s, labels: %s", name, labels)
+	}
+	return nil
 }
 
 // List returns a list of secrets from a namespace
@@ -102,20 +108,19 @@ func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unu
 // Delete removes secrets
 func (ss SecretsService) Delete(secrets []v1.Secret) {
 	for _, resource := range secrets {
-		namespace := resource.GetNamespace()
-		kind := "Secret"
-		name := resource.GetName()
+		namespace := resource.Namespace
+		name := resource.Name
 
 		if ss.configuration.Batch {
-			fmt.Println(resource.GetName())
+			fmt.Println(name)
 		} else {
-			log.Infof("Deleting %s %s/%s", kind, namespace, name)
+			log.Infof("Deleting secret %s/%s", namespace, name)
 		}
 
 		err := ss.client.Delete(name, &metav1.DeleteOptions{})
 
 		if err != nil {
-			log.WithError(err).Errorf("Failed to delete %s %s/%s", kind, namespace, name)
+			log.WithError(err).Errorf("Failed to delete secret %s/%s", namespace, name)
 		}
 	}
 }

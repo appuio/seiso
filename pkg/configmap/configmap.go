@@ -17,7 +17,7 @@ import (
 
 type (
 	Service interface {
-		ListNamesAndLabels() (configMapNames, labels []string, err error)
+		PrintNamesAndLabels(namespace string) error
 		List(listOptions metav1.ListOptions) (configMaps []v1.ConfigMap, err error)
 		GetUnused(namespace string, configMaps []v1.ConfigMap) (unusedConfigMaps []v1.ConfigMap, funcErr error)
 		Delete(configMaps []v1.ConfigMap)
@@ -26,18 +26,17 @@ type (
 		Print(configMaps []v1.ConfigMap)
 	}
 	ConfigMapsService struct {
-		configuration Configuration
+		configuration ServiceConfiguration
 		client        core.ConfigMapInterface
 		helper        kubernetes.Kubernetes
 	}
+	ServiceConfiguration struct {
+		Batch bool
+	}
 )
 
-type Configuration struct {
-	Batch bool
-}
-
 // NewConfigMapsService creates a new Service instance
-func NewConfigMapsService(client core.ConfigMapInterface, helper kubernetes.Kubernetes, configuration Configuration) ConfigMapsService {
+func NewConfigMapsService(client core.ConfigMapInterface, helper kubernetes.Kubernetes, configuration ServiceConfiguration) ConfigMapsService {
 	return ConfigMapsService{
 		client:        client,
 		helper:        helper,
@@ -45,15 +44,22 @@ func NewConfigMapsService(client core.ConfigMapInterface, helper kubernetes.Kube
 	}
 }
 
-// ListNamesAndLabels return names and labels of Config Maps
-func (cms ConfigMapsService) ListNamesAndLabels() (resourceNames, labels []string, err error) {
+// PrintNamesAndLabels return names and labels of Config Maps
+func (cms ConfigMapsService) PrintNamesAndLabels(namespace string) error {
 	configMaps, err := cms.List(metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
 	var objectMetas []metav1.ObjectMeta
 	for _, cm := range configMaps {
 		objectMetas = append(objectMetas, cm.ObjectMeta)
 	}
-	configMapNames, labels := util.GetNamesAndLabels(objectMetas)
-	return configMapNames, labels, nil
+	log.Infof("Following Config Maps are available in namespace %s", namespace)
+	namesAndLabels := util.GetNamesAndLabels(objectMetas)
+	for name, labels := range namesAndLabels {
+		log.Infof("Name: %s, labels: %s", name, labels)
+	}
+	return nil
 }
 
 // List returns a list of ConfigMaps from a namespace
@@ -102,20 +108,19 @@ func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigM
 // Delete removes Config Maps
 func (cms ConfigMapsService) Delete(configMaps []v1.ConfigMap) {
 	for _, resource := range configMaps {
-		namespace := resource.GetNamespace()
-		name := resource.GetName()
-		kind := "ConfigMaps"
+		namespace := resource.Namespace
+		name := resource.Name
 
 		if cms.configuration.Batch {
-			fmt.Println(resource.GetName())
+			fmt.Println(name)
 		} else {
-			log.Infof("Deleting %s %s/%s", kind, namespace, name)
+			log.Infof("Deleting configmap %s/%s", namespace, name)
 		}
 
 		err := cms.client.Delete(name, &metav1.DeleteOptions{})
 
 		if err != nil {
-			log.WithError(err).Errorf("Failed to delete config map %s/%s", namespace, name)
+			log.WithError(err).Errorf("Failed to delete configmap %s/%s", namespace, name)
 		}
 	}
 }
@@ -134,7 +139,6 @@ func (cms ConfigMapsService) FilterByTime(configMaps []v1.ConfigMap, olderThan t
 			log.WithFields(log.Fields{
 				"configMap": resource.Name,
 			}).Debug("Filtering resource")
-
 		} else {
 			log.WithField("name", resource.GetName()).Debug("Filtered resource")
 		}
@@ -159,7 +163,7 @@ func (cms ConfigMapsService) FilterByMaxCount(configMaps []v1.ConfigMap, keep in
 		} else if timestampSecond.IsZero() {
 			return false
 		}
-		return configMaps[j].GetCreationTimestamp().Time.Before(configMaps[i].GetCreationTimestamp().Time)
+		return timestampFirst.Time.Before(timestampSecond.Time)
 	})
 
 	if len(configMaps) <= keep {
