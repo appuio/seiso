@@ -37,7 +37,7 @@ var (
 			secretService := secret.NewSecretsService(
 				coreClient.Secrets(config.Namespace),
 				kubernetes.New(),
-				secret.Configuration{Batch: config.Log.Batch})
+				secret.ServiceConfiguration{Batch: config.Log.Batch})
 			return executeSecretCleanupCommand(secretService)
 		},
 	}
@@ -66,15 +66,10 @@ func executeSecretCleanupCommand(service secret.Service) error {
 	c := config.Resource
 	namespace := config.Namespace
 	if len(config.Resource.Labels) == 0 {
-		secrets, labels, err := service.ListNamesAndLabels()
+		err := service.PrintNamesAndLabels(namespace)
 		if err != nil {
 			return err
 		}
-		log.WithFields(log.Fields{
-			"\n - namespace": namespace,
-			"\n - 🔐 secrets": secrets,
-			"\n - 🎫 labels":  labels,
-		}).Info("Please use labels to select Secrets. The following Secrets and Labels are available:")
 		return nil
 	}
 

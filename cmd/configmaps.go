@@ -38,7 +38,7 @@ var (
 			configMapService := configmap.NewConfigMapsService(
 				coreClient.ConfigMaps(config.Namespace),
 				kubernetes.New(),
-				configmap.Configuration{Batch: config.Log.Batch})
+				configmap.ServiceConfiguration{Batch: config.Log.Batch})
 			return executeConfigMapCleanupCommand(configMapService)
 		},
 	}
@@ -68,15 +68,10 @@ func executeConfigMapCleanupCommand(service configmap.Service) error {
 	c := config.Resource
 	namespace := config.Namespace
 	if len(config.Resource.Labels) == 0 {
-		configMaps, labels, err := service.ListNamesAndLabels()
+		err := service.PrintNamesAndLabels(namespace)
 		if err != nil {
 			return err
 		}
-		log.WithFields(log.Fields{
-			"\n - namespace":    namespace,
-			"\n - 🔐 configMaps": configMaps,
-			"\n - 🎫 labels":     labels,
-		}).Info("Please use labels to select ConfigMaps. The following ConfigMaps and Labels are available:")
 		return nil
 	}
 
