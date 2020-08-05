@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -34,7 +33,8 @@ func init() {
 	rootCmd.PersistentFlags().StringP("namespace", "n", config.Namespace, "Cluster namespace of current context")
 	rootCmd.PersistentFlags().String("log.level", config.Log.LogLevel, "Log level, one of [debug info warn error fatal]")
 	rootCmd.PersistentFlags().BoolP("log.verbose", "v", config.Log.Verbose, "Shorthand for --log.level debug")
-	rootCmd.PersistentFlags().BoolP("log.batch", "b", config.Log.Batch, "Use Batch mode (disables logging, prints deleted images only)")
+	rootCmd.PersistentFlags().BoolP("log.batch", "b", config.Log.Batch,
+		"Use Batch mode (Prints error to StdErr, StdOut is used to just print resource names, useful for piping)")
 	cobra.OnInitialize(initRootConfig)
 }
 
@@ -56,13 +56,14 @@ func parseConfig(cmd *cobra.Command, args []string) {
 		DisableTimestamp: true,
 	})
 
-	if config.Log.Batch {
-		log.SetOutput(ioutil.Discard)
-	} else {
-		log.SetOutput(os.Stderr)
-	}
 	if config.Log.Verbose {
 		config.Log.LogLevel = "debug"
+	}
+	if config.Log.Batch {
+		log.SetOutput(os.Stderr)
+		config.Log.LogLevel = "error"
+	} else {
+		log.SetOutput(os.Stdout)
 	}
 	level, err := log.ParseLevel(config.Log.LogLevel)
 	if err != nil {

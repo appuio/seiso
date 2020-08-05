@@ -46,6 +46,12 @@ type (
 		Labels    []string `koanf:"label"`
 		OlderThan string   `koanf:"older-than"`
 	}
+	// CoreObjectInterface defines interface for core kubernetes resources
+	CoreObjectInterface interface {
+		Delete(name string, options *metav1.DeleteOptions) error
+	}
+	// ResourceNamespaceSelector gets resource from client
+	ResourceNamespaceSelector func(*core.CoreV1Client) CoreObjectInterface
 )
 
 // NewDefaultConfig retrieves the hardcoded configs with sane defaults
@@ -82,11 +88,3 @@ func NewDefaultConfig() *Configuration {
 		},
 	}
 }
-
-//CoreObjectInterface defines interface for core kubernetes resources
-type CoreObjectInterface interface {
-	Delete(name string, options *metav1.DeleteOptions) error
-}
-
-//ResourceNamespaceSelector gets resource from client
-type ResourceNamespaceSelector func(*core.CoreV1Client) CoreObjectInterface

@@ -17,12 +17,21 @@ import (
 
 type (
 	Service interface {
+		// PrintNamesAndLabels return the names and labels of all secrets
 		PrintNamesAndLabels(namespace string) error
+		// List returns a list of Secrets from a namespace
 		List(listOptions metav1.ListOptions) (resources []v1.Secret, err error)
+		// GetUnused returns unused Secrets.
 		GetUnused(namespace string, secrets []v1.Secret) (unusedSecrets []v1.Secret, funcErr error)
-		Delete(secrets []v1.Secret)
+		// Delete removes the given Secrets. Errors are logged only.
+		Delete(secrets []v1.Secret) error
+		// FilterByTime returns Secrets which are older than specified date
 		FilterByTime(secrets []v1.Secret, olderThan time.Time) (filteredSecrets []v1.Secret)
+		// FilterByMaxCount returns the latest resources until limited by <keep>. The list of secrets is sorted by
+		// CreationTimestamp, with newest entries first.
 		FilterByMaxCount(secrets []v1.Secret, keep int) (filteredSecrets []v1.Secret)
+		// Print prints the given Secrets line by line. In batch mode, only the Secret name is printed, otherwise default
+		// log with info level
 		Print(secrets []v1.Secret)
 	}
 
@@ -45,25 +54,18 @@ func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes
 	}
 }
 
-// PrintNamesAndLabels return the names and labels of all secrets
 func (ss SecretsService) PrintNamesAndLabels(namespace string) error {
 	secrets, err := ss.List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	var objectMetas []metav1.ObjectMeta
-	for _, s := range secrets {
-		objectMetas = append(objectMetas, s.ObjectMeta)
-	}
 	log.Infof("Following Secrets are available in namespace %s", namespace)
-	namesAndLabels := util.GetNamesAndLabels(objectMetas)
-	for name, labels := range namesAndLabels {
-		log.Infof("Name: %s, labels: %s", name, labels)
+	for _, s := range secrets {
+		log.Infof("Name: %s, labels: %s", s.Name, util.FlattenStringMap(s.Labels))
 	}
 	return nil
 }
 
-// List returns a list of secrets from a namespace
 func (ss SecretsService) List(listOptions metav1.ListOptions) ([]v1.Secret, error) {
 	secrets, err := ss.client.List(listOptions)
 	if err != nil {
@@ -72,7 +74,6 @@ func (ss SecretsService) List(listOptions metav1.ListOptions) ([]v1.Secret, erro
 	return secrets.Items, nil
 }
 
-// GetUnused returns unused resources
 func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unusedResources []v1.Secret, funcErr error) {
 	var usedSecrets []v1.Secret
 	funk.ForEach(openshift.PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
@@ -105,76 +106,52 @@ func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unu
 	return unusedResources, funcErr
 }
 
-// Delete removes secrets
-func (ss SecretsService) Delete(secrets []v1.Secret) {
+func (ss SecretsService) Delete(secrets []v1.Secret) error {
 	for _, resource := range secrets {
-		namespace := resource.Namespace
-		name := resource.Name
-
-		if ss.configuration.Batch {
-			fmt.Println(name)
-		} else {
-			log.Infof("Deleting secret %s/%s", namespace, name)
-		}
-
-		err := ss.client.Delete(name, &metav1.DeleteOptions{})
-
+		err := ss.client.Delete(resource.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			log.WithError(err).Errorf("Failed to delete secret %s/%s", namespace, name)
+			return err
+		}
+		if ss.configuration.Batch {
+			fmt.Println(resource.Name)
+		} else {
+			log.Infof("Deleted Secret %s/%s", resource.Namespace, resource.Name)
 		}
 	}
+	return nil
 }
 
-//FilterByTime returns secrets which are older than specified date
 func (ss SecretsService) FilterByTime(secrets []v1.Secret, olderThan time.Time) (filteredResources []v1.Secret) {
 	log.WithFields(log.Fields{
 		"olderThan": olderThan,
-	}).Debug("Filtering resources older than the specified time")
+	}).Debug("Filtering resources older than the specified time.")
 
 	for _, resource := range secrets {
-		lastUpdatedDate := resource.GetCreationTimestamp()
-		// In case the creation date is null (isZero()) treat as oldest
-		if lastUpdatedDate.IsZero() || lastUpdatedDate.Time.Before(olderThan) {
+		if util.IsOlderThan(&resource, olderThan) {
 			filteredResources = append(filteredResources, resource)
-			log.WithFields(log.Fields{
-				"secret": resource.Name,
-			}).Debug("Filtering resource")
-		} else {
-			log.WithField("name", resource.GetName()).Debug("Filtered resource")
 		}
 	}
-
 	return filteredResources
 }
 
-// FilterByMaxCount keep at most n newest resources. The list of secrets is sorted in descending ordered in
 func (ss SecretsService) FilterByMaxCount(secrets []v1.Secret, keep int) (filteredResources []v1.Secret) {
-
 	log.WithFields(log.Fields{
-		"keep":    keep,
-		"secrets": secrets,
-	}).Debug("Filtering ordered by time Resources from the n'th number specified")
-
-	sort.SliceStable(secrets, func(i, j int) bool {
-		timestampFirst := secrets[j].GetCreationTimestamp()
-		timestampSecond := secrets[i].GetCreationTimestamp()
-		if timestampFirst.IsZero() || timestampFirst.IsZero() && timestampSecond.IsZero() {
-			return true
-		} else if timestampSecond.IsZero() {
-			return false
-		}
-		return timestampSecond.Time.Before(timestampSecond.Time)
-	})
+		"keep": keep,
+	}).Debug("Filtering out oldest resources to a capped amount.")
 
 	if len(secrets) <= keep {
 		return []v1.Secret{}
 	}
 
+	sort.SliceStable(secrets, func(i, j int) bool {
+		timestampFirst := secrets[j].GetCreationTimestamp()
+		timestampSecond := secrets[i].GetCreationTimestamp()
+		return util.CompareTimestamps(timestampFirst, timestampSecond)
+	})
+
 	return secrets[keep:]
 }
 
-// Print prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
-// log with info level
 func (ss SecretsService) Print(resources []v1.Secret) {
 	if len(resources) == 0 {
 		log.Info("Nothing found to be deleted.")
@@ -185,7 +162,7 @@ func (ss SecretsService) Print(resources []v1.Secret) {
 		}
 	} else {
 		for _, resource := range resources {
-			log.Infof("Found candidate: %s/%s", resource.Namespace, resource.GetName())
+			log.Infof("Found candidate: %s/%s", resource.Namespace, resource.Name)
 		}
 	}
 }

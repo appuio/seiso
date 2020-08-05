@@ -77,12 +77,12 @@ func executeSecretCleanupCommand(service secret.Service) error {
 
 	foundSecrets, err := service.List(getListOptions(c.Labels))
 	if err != nil {
-		return fmt.Errorf("Could not retrieve secrets with labels '%s' for '%s': %w", c.Labels, namespace, err)
+		return fmt.Errorf("could not retrieve secrets with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
 	unusedSecrets, err := service.GetUnused(namespace, foundSecrets)
 	if err != nil {
-		return fmt.Errorf("Could not retrieve unused secrets for '%s': %w", namespace, err)
+		return fmt.Errorf("could not retrieve unused secrets for '%s': %w", namespace, err)
 	}
 
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
@@ -91,7 +91,10 @@ func executeSecretCleanupCommand(service secret.Service) error {
 	filteredSecrets = service.FilterByMaxCount(filteredSecrets, config.History.Keep)
 
 	if config.Delete {
-		service.Delete(filteredSecrets)
+		err := service.Delete(filteredSecrets)
+		if err != nil {
+			return fmt.Errorf("could not delete secrets for '%s': %s", namespace, err)
+		}
 	} else {
 		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
 		service.Print(filteredSecrets)
