@@ -1,7 +1,6 @@
 package openshift
 
 import (
-	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/kubernetes"
 	imagev1 "github.com/openshift/api/image/v1"
 	log "github.com/sirupsen/logrus"
@@ -98,71 +97,4 @@ func ListImageStreams(namespace string) ([]imagev1.ImageStream, error) {
 		return nil, err
 	}
 	return imageStreams.Items, nil
-}
-
-// ListConfigMaps returns a list of ConfigMaps from a namspace that have these labels
-func ListConfigMaps(namespace string, listOptions metav1.ListOptions) (resources []cfg.KubernetesResource, err error) {
-	coreClient, err := kubernetes.NewCoreV1Client()
-	if err != nil {
-		return nil, err
-	}
-
-	configMaps, err := coreClient.ConfigMaps(namespace).List(listOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, configMap := range configMaps.Items {
-		resource := cfg.NewConfigMapResource(
-			configMap.GetName(),
-			configMap.GetNamespace(),
-			configMap.GetCreationTimestamp().Time,
-			configMap.GetLabels())
-		resources = append(resources, resource)
-	}
-
-	return resources, nil
-}
-
-// ListUnusedResources lists resources that are unused
-func ListUnusedResources(namespace string, resources []cfg.KubernetesResource) (unusedResources []cfg.KubernetesResource, funcErr error) {
-	var usedResources []cfg.KubernetesResource
-	funk.ForEach(PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
-		funk.ForEach(resources, func(resource cfg.KubernetesResource) {
-
-			resourceName := resource.GetName()
-
-			if funk.Contains(usedResources, resource) {
-				// already marked as existing, skip this
-				return
-			}
-			contains, err := helper.ResourceContains(namespace, resourceName, predefinedResource)
-			if err != nil {
-				funcErr = err
-				return
-			}
-
-			if contains {
-				usedResources = append(usedResources, resource)
-			}
-		})
-	})
-
-	for _, resource := range resources {
-		if !funk.Contains(usedResources, resource) {
-			unusedResources = append(unusedResources, resource)
-		}
-	}
-
-	return unusedResources, funcErr
-}
-
-// DeleteResource permanently deletes a resource
-func DeleteResource(resource string, resourceSelectorFunc cfg.ResourceNamespaceSelector) error {
-	coreClient, err := kubernetes.NewCoreV1Client()
-	if err != nil {
-		return err
-	}
-
-	return resourceSelectorFunc(coreClient).Delete(resource, &metav1.DeleteOptions{})
 }

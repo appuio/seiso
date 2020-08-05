@@ -8,7 +8,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/fake"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
 	test "k8s.io/client-go/testing"
 	"testing"
 	"time"
@@ -36,35 +35,39 @@ func Test_PrintNamesAndLabels(t *testing.T) {
 	tests := []struct {
 		name       string
 		configMaps []v1.ConfigMap
-		err        error
+		expectErr  bool
+		reaction   test.ReactionFunc
 	}{
 		{
 			name:       "GivenListOfConfigMaps_WhenListError_ThenReturnError",
 			configMaps: []v1.ConfigMap{},
-			err:        errors.New("error config map"),
+			expectErr:  true,
+			reaction:   createErrorReactor(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset()
-			clientset.PrependReactor("list", "configmaps", func(action test.Action) (handled bool, ret runtime.Object, err error) {
-				return true, &v1.ConfigMapList{}, tt.err
-			})
-			fakeConfigMapsInterface := clientset.CoreV1().ConfigMaps(testNamespace)
-			service := NewConfigMapsService(fakeConfigMapsInterface, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
+			clientset := fake.NewSimpleClientset(convertToRuntime(tt.configMaps)[:]...)
+			clientset.PrependReactor("list", "configmaps", tt.reaction)
+			fakeClient := clientset.CoreV1().ConfigMaps(testNamespace)
+			service := NewConfigMapsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
 			err := service.PrintNamesAndLabels(testNamespace)
-			assert.EqualError(t, err, tt.err.Error())
+			if tt.expectErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
-
 func Test_List(t *testing.T) {
 
 	tests := []struct {
 		name       string
 		configMaps []v1.ConfigMap
-		err        error
+		expectErr  bool
+		reaction   test.ReactionFunc
 	}{
 		{
 			name:       "GivenListOfConfigMaps_WhenAllPresent_ThenReturnAllOfThem",
@@ -77,32 +80,27 @@ func Test_List(t *testing.T) {
 		{
 			name:       "GivenListOfConfigMap_WhenListError_ThenReturnError",
 			configMaps: []v1.ConfigMap{},
-			err:        errors.New("error configmap"),
+			reaction:   createErrorReactor(),
+			expectErr:  true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var fakeConfigMapInterface core.ConfigMapInterface
-			if len(tt.configMaps) != 0 {
-				fakeConfigMapInterface = fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1]).CoreV1().ConfigMaps(testNamespace)
-			} else {
-				clientset := fake.NewSimpleClientset()
-				clientset.PrependReactor("list", "configmaps", func(action test.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &v1.ConfigMapList{}, tt.err
-				})
-				fakeConfigMapInterface = clientset.CoreV1().ConfigMaps(testNamespace)
+			clientset := fake.NewSimpleClientset(convertToRuntime(tt.configMaps)[:]...)
+			if tt.reaction != nil {
+				clientset.PrependReactor("list", "configmaps", tt.reaction)
 			}
-
-			service := NewConfigMapsService(fakeConfigMapInterface, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
+			fakeClient := clientset.CoreV1().ConfigMaps(testNamespace)
+			service := NewConfigMapsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
 
 			list, err := service.List(metav1.ListOptions{})
-			if tt.err == nil {
-				assert.NoError(t, err)
-				assert.ElementsMatch(t, tt.configMaps, list)
-			} else {
-				assert.EqualError(t, err, tt.err.Error())
+			if tt.expectErr {
+				assert.Error(t, err)
+				return
 			}
+			assert.NoError(t, err)
+			assert.ElementsMatch(t, tt.configMaps, list)
 		})
 	}
 }
@@ -110,42 +108,33 @@ func Test_List(t *testing.T) {
 func Test_FilterByTime(t *testing.T) {
 
 	tests := []struct {
-		name               string
-		configMaps         []v1.ConfigMap
-		filteredConfigMaps []v1.ConfigMap
-		cutOffDate         time.Time
-		err                error
+		name           string
+		configMaps     []v1.ConfigMap
+		expectedResult []v1.ConfigMap
+		cutOffDate     time.Time
+		err            error
 	}{
 		{
 			name:       "GivenListOfConfigMaps_WhenFilteredByTime_ThenReturnASubsetOfConfigMaps",
 			configMaps: generateBaseTestConfigMaps(),
-			filteredConfigMaps: []v1.ConfigMap{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "nameB",
-						Namespace: testNamespace,
-						CreationTimestamp: metav1.Time{
-							Time: time.Date(2010, 1, 1, 1, 0, 0, 0, time.UTC),
-						},
-						Labels: map[string]string{"keyB": "valueB", "keyC": "valueC"},
-					},
-				},
+			expectedResult: []v1.ConfigMap{
+				generateBaseTestConfigMaps()[1],
 			},
 			cutOffDate: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 		{
-			name:               "GivenListOfConfigMaps_WhenFilteredBefore2010_ThenReturnEmptyList",
-			configMaps:         generateBaseTestConfigMaps(),
-			filteredConfigMaps: []v1.ConfigMap{},
-			cutOffDate:         time.Date(2005, 1, 1, 1, 0, 0, 0, time.UTC),
+			name:           "GivenListOfConfigMaps_WhenFilteredBefore2010_ThenReturnEmptyList",
+			configMaps:     generateBaseTestConfigMaps(),
+			expectedResult: []v1.ConfigMap{},
+			cutOffDate:     time.Date(2005, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeConfigMapInterface := fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1]).CoreV1().ConfigMaps(testNamespace)
-			service := NewConfigMapsService(fakeConfigMapInterface, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
+			fakeClient := fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1]).CoreV1().ConfigMaps(testNamespace)
+			service := NewConfigMapsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
 			filteredConfigMaps := service.FilterByTime(tt.configMaps, tt.cutOffDate)
-			assert.ElementsMatch(t, filteredConfigMaps, tt.filteredConfigMaps)
+			assert.ElementsMatch(t, filteredConfigMaps, tt.expectedResult)
 		})
 	}
 }
@@ -163,16 +152,7 @@ func Test_FilterByMaxCount(t *testing.T) {
 			name:       "GivenListOfConfigMaps_FilterByMaxCountOne_ThenReturnOneConfigMap",
 			configMaps: generateBaseTestConfigMaps(),
 			filteredConfigMaps: []v1.ConfigMap{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "nameB",
-						Namespace: testNamespace,
-						CreationTimestamp: metav1.Time{
-							Time: time.Date(2010, 1, 1, 1, 0, 0, 0, time.UTC),
-						},
-						Labels: map[string]string{"keyB": "valueB", "keyC": "valueC"},
-					},
-				},
+				generateBaseTestConfigMaps()[1],
 			},
 			keep: 1,
 		},
@@ -201,43 +181,41 @@ func Test_FilterByMaxCount(t *testing.T) {
 
 func Test_Delete(t *testing.T) {
 	tests := []struct {
-		name       string
-		configMaps []v1.ConfigMap
-		err        error
+		name              string
+		configMaps        []v1.ConfigMap
+		expectErr         bool
+		reaction          test.ReactionFunc
+		expectedRemaining []v1.ConfigMap
 	}{
 		{
-			name:       "GivenASetOfConfigMaps_WhenAllPresent_ThenDeleteAllOfThem",
-			configMaps: generateBaseTestConfigMaps(),
+			name:              "GivenASetOfConfigMaps_WhenAllPresent_ThenDeleteAllOfThem",
+			configMaps:        generateBaseTestConfigMaps(),
+			expectedRemaining: []v1.ConfigMap{},
 		},
 		{
-			name:       "GivenASetOfConfigMaps_WhenError_ThenReturnError",
-			configMaps: generateBaseTestConfigMaps(),
-			err:        errors.New("ConfigMap error"),
+			name:              "GivenASetOfConfigMaps_WhenError_ThenReturnError",
+			configMaps:        generateBaseTestConfigMaps(),
+			expectedRemaining: generateBaseTestConfigMaps(),
+			reaction:          createErrorReactor(),
+			expectErr:         true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var fakeConfigMapInterface core.ConfigMapInterface
-			if tt.err == nil {
-				fakeConfigMapInterface = fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1]).CoreV1().ConfigMaps(testNamespace)
-			} else {
-				clientset := fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1])
-				clientset.PrependReactor("delete", "configmaps", func(action test.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, tt.err
-				})
-				fakeConfigMapInterface = clientset.CoreV1().ConfigMaps(testNamespace)
+			clientset := fake.NewSimpleClientset(convertToRuntime(tt.configMaps)[:]...)
+			if tt.reaction != nil {
+				clientset.PrependReactor("delete", "configmaps", tt.reaction)
 			}
-			service := NewConfigMapsService(fakeConfigMapInterface, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
-			service.Delete(tt.configMaps)
-			list, err := fakeConfigMapInterface.List(metav1.ListOptions{})
-
+			fakeClient := clientset.CoreV1().ConfigMaps(testNamespace)
+			service := NewConfigMapsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
+			err := service.Delete(tt.configMaps)
+			if tt.expectErr {
+				assert.Error(t, err)
+			}
+			list, err := fakeClient.List(metav1.ListOptions{})
 			assert.NoError(t, err)
-			if tt.err == nil {
-				assert.EqualValues(t, 0, len(list.Items))
-			} else {
-				assert.EqualValues(t, 2, len(list.Items))
-			}
+			assert.ElementsMatch(t, tt.expectedRemaining, list.Items)
 		})
 	}
 }
@@ -312,5 +290,18 @@ func generateBaseTestConfigMaps() []v1.ConfigMap {
 				Labels: map[string]string{"keyB": "valueB", "keyC": "valueC"},
 			},
 		},
+	}
+}
+
+func convertToRuntime(cm []v1.ConfigMap) (objects []runtime.Object) {
+	for _, s := range cm {
+		objects = append(objects, s.DeepCopyObject())
+	}
+	return objects
+}
+
+func createErrorReactor() test.ReactionFunc {
+	return func(action test.Action) (handled bool, ret runtime.Object, err error) {
+		return true, nil, errors.New("error")
 	}
 }

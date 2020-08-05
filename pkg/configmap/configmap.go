@@ -17,12 +17,21 @@ import (
 
 type (
 	Service interface {
+		// PrintNamesAndLabels return names and labels of ConfigMaps
 		PrintNamesAndLabels(namespace string) error
+		// List returns a list of ConfigMaps from a namespace
 		List(listOptions metav1.ListOptions) (configMaps []v1.ConfigMap, err error)
+		// GetUnused return unused ConfigMaps
 		GetUnused(namespace string, configMaps []v1.ConfigMap) (unusedConfigMaps []v1.ConfigMap, funcErr error)
-		Delete(configMaps []v1.ConfigMap)
+		// Delete removes the given ConfigMaps
+		Delete(configMaps []v1.ConfigMap) error
+		// FilterByTime returns ConfigMaps which are older than specified date
 		FilterByTime(configMaps []v1.ConfigMap, olderThan time.Time) (filteredConfigMaps []v1.ConfigMap)
+		// FilterByMaxCount returns the latest resources until limited by <keep>. The list of ConfigMaps is sorted by
+		// CreationTimestamp, with newest entries first.
 		FilterByMaxCount(configMaps []v1.ConfigMap, keep int) (filteredConfigMaps []v1.ConfigMap)
+		// Print outputs the given ConfigMaps line by line. In batch mode, only the ConfigMap name is printed, otherwise default
+		// log with info level
 		Print(configMaps []v1.ConfigMap)
 	}
 	ConfigMapsService struct {
@@ -44,25 +53,18 @@ func NewConfigMapsService(client core.ConfigMapInterface, helper kubernetes.Kube
 	}
 }
 
-// PrintNamesAndLabels return names and labels of Config Maps
 func (cms ConfigMapsService) PrintNamesAndLabels(namespace string) error {
 	configMaps, err := cms.List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	var objectMetas []metav1.ObjectMeta
-	for _, cm := range configMaps {
-		objectMetas = append(objectMetas, cm.ObjectMeta)
-	}
 	log.Infof("Following Config Maps are available in namespace %s", namespace)
-	namesAndLabels := util.GetNamesAndLabels(objectMetas)
-	for name, labels := range namesAndLabels {
-		log.Infof("Name: %s, labels: %s", name, labels)
+	for _, cm := range configMaps {
+		log.Infof("Name: %s, labels: %s", cm.Name, util.FlattenStringMap(cm.Labels))
 	}
 	return nil
 }
 
-// List returns a list of ConfigMaps from a namespace
 func (cms ConfigMapsService) List(listOptions metav1.ListOptions) ([]v1.ConfigMap, error) {
 	configMaps, err := cms.client.List(listOptions)
 	if err != nil {
@@ -72,7 +74,6 @@ func (cms ConfigMapsService) List(listOptions metav1.ListOptions) ([]v1.ConfigMa
 	return configMaps.Items, nil
 }
 
-// GetUnused return unused Config Maps
 func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigMap) (unusedConfigMaps []v1.ConfigMap, funcErr error) {
 	var usedConfigMaps []v1.ConfigMap
 	funk.ForEach(openshift.PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
@@ -105,76 +106,52 @@ func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigM
 	return unusedConfigMaps, funcErr
 }
 
-// Delete removes Config Maps
-func (cms ConfigMapsService) Delete(configMaps []v1.ConfigMap) {
+func (cms ConfigMapsService) Delete(configMaps []v1.ConfigMap) error {
 	for _, resource := range configMaps {
-		namespace := resource.Namespace
-		name := resource.Name
-
-		if cms.configuration.Batch {
-			fmt.Println(name)
-		} else {
-			log.Infof("Deleting configmap %s/%s", namespace, name)
-		}
-
-		err := cms.client.Delete(name, &metav1.DeleteOptions{})
-
+		err := cms.client.Delete(resource.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			log.WithError(err).Errorf("Failed to delete configmap %s/%s", namespace, name)
+			return err
+		}
+		if cms.configuration.Batch {
+			fmt.Println(resource.Name)
+		} else {
+			log.Infof("Deleted ConfigMap %s/%s", resource.Namespace, resource.Name)
 		}
 	}
+	return nil
 }
 
-//FilterByTime returns config maps which are older than specified date
 func (cms ConfigMapsService) FilterByTime(configMaps []v1.ConfigMap, olderThan time.Time) (filteredResources []v1.ConfigMap) {
 	log.WithFields(log.Fields{
 		"olderThan": olderThan,
 	}).Debug("Filtering resources older than the specified time")
 
 	for _, resource := range configMaps {
-		lastUpdatedDate := resource.GetCreationTimestamp()
-		// In case the creation date is null (isZero()) treat as oldest
-		if lastUpdatedDate.IsZero() || lastUpdatedDate.Time.Before(olderThan) {
+		if util.IsOlderThan(&resource, olderThan) {
 			filteredResources = append(filteredResources, resource)
-			log.WithFields(log.Fields{
-				"configMap": resource.Name,
-			}).Debug("Filtering resource")
-		} else {
-			log.WithField("name", resource.GetName()).Debug("Filtered resource")
 		}
 	}
-
 	return filteredResources
 }
 
-// FilterByMaxCount keep at most n newest resources. The list of config maps is sorted in descending ordered in
 func (cms ConfigMapsService) FilterByMaxCount(configMaps []v1.ConfigMap, keep int) (filteredResources []v1.ConfigMap) {
-
 	log.WithFields(log.Fields{
-		"keep":       keep,
-		"configMaps": configMaps,
-	}).Debug("Filtering ordered by time Resources from the n'th number specified")
-
-	sort.SliceStable(configMaps, func(i, j int) bool {
-		timestampFirst := configMaps[j].GetCreationTimestamp()
-		timestampSecond := configMaps[i].GetCreationTimestamp()
-		if timestampFirst.IsZero() || timestampFirst.IsZero() && timestampSecond.IsZero() {
-			return true
-		} else if timestampSecond.IsZero() {
-			return false
-		}
-		return timestampFirst.Time.Before(timestampSecond.Time)
-	})
+		"keep": keep,
+	}).Debug("Filtering out oldest resources to a capped amount")
 
 	if len(configMaps) <= keep {
 		return []v1.ConfigMap{}
 	}
 
+	sort.SliceStable(configMaps, func(i, j int) bool {
+		timestampFirst := configMaps[j].GetCreationTimestamp()
+		timestampSecond := configMaps[i].GetCreationTimestamp()
+		return util.CompareTimestamps(timestampFirst, timestampSecond)
+	})
+
 	return configMaps[keep:]
 }
 
-// Print prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
-// log with info level
 func (cms ConfigMapsService) Print(resources []v1.ConfigMap) {
 	if len(resources) == 0 {
 		log.Info("Nothing found to be deleted.")
@@ -185,7 +162,7 @@ func (cms ConfigMapsService) Print(resources []v1.ConfigMap) {
 		}
 	} else {
 		for _, resource := range resources {
-			log.Infof("Found candidate: %s/%s", resource.Namespace, resource.GetName())
+			log.Infof("Found candidate: %s/%s", resource.Namespace, resource.Name)
 		}
 	}
 }
