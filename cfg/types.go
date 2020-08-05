@@ -1,11 +1,8 @@
 package cfg
 
 import (
-	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	core "k8s.io/client-go/kubernetes/typed/core/v1"
-
 	"github.com/appuio/seiso/pkg/kubernetes"
+	log "github.com/sirupsen/logrus"
 )
 
 type (
@@ -46,12 +43,6 @@ type (
 		Labels    []string `koanf:"label"`
 		OlderThan string   `koanf:"older-than"`
 	}
-	// CoreObjectInterface defines interface for core kubernetes resources
-	CoreObjectInterface interface {
-		Delete(name string, options *metav1.DeleteOptions) error
-	}
-	// ResourceNamespaceSelector gets resource from client
-	ResourceNamespaceSelector func(*core.CoreV1Client) CoreObjectInterface
 )
 
 // NewDefaultConfig retrieves the hardcoded configs with sane defaults
