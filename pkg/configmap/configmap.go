@@ -17,8 +17,6 @@ import (
 
 type (
 	Service interface {
-		// PrintNamesAndLabels return names and labels of ConfigMaps
-		PrintNamesAndLabels(namespace string) error
 		// List returns a list of ConfigMaps from a namespace
 		List(listOptions metav1.ListOptions) (configMaps []v1.ConfigMap, err error)
 		// GetUnused return unused ConfigMaps
@@ -53,24 +51,11 @@ func NewConfigMapsService(client core.ConfigMapInterface, helper kubernetes.Kube
 	}
 }
 
-func (cms ConfigMapsService) PrintNamesAndLabels(namespace string) error {
-	configMaps, err := cms.List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	log.Infof("Following Config Maps are available in namespace %s", namespace)
-	for _, cm := range configMaps {
-		log.Infof("Name: %s, labels: %s", cm.Name, util.FlattenStringMap(cm.Labels))
-	}
-	return nil
-}
-
 func (cms ConfigMapsService) List(listOptions metav1.ListOptions) ([]v1.ConfigMap, error) {
 	configMaps, err := cms.client.List(listOptions)
 	if err != nil {
 		return nil, err
 	}
-
 	return configMaps.Items, nil
 }
 

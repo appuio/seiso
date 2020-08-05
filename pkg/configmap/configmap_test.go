@@ -30,37 +30,6 @@ func (k *HelperKubernetesErr) ResourceContains(namespace, value string, resource
 
 var testNamespace = "testNamespace"
 
-func Test_PrintNamesAndLabels(t *testing.T) {
-
-	tests := []struct {
-		name       string
-		configMaps []v1.ConfigMap
-		expectErr  bool
-		reaction   test.ReactionFunc
-	}{
-		{
-			name:       "GivenListOfConfigMaps_WhenListError_ThenReturnError",
-			configMaps: []v1.ConfigMap{},
-			expectErr:  true,
-			reaction:   createErrorReactor(),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset(convertToRuntime(tt.configMaps)[:]...)
-			clientset.PrependReactor("list", "configmaps", tt.reaction)
-			fakeClient := clientset.CoreV1().ConfigMaps(testNamespace)
-			service := NewConfigMapsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
-			err := service.PrintNamesAndLabels(testNamespace)
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
 func Test_List(t *testing.T) {
 
 	tests := []struct {
@@ -131,7 +100,7 @@ func Test_FilterByTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeClient := fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1]).CoreV1().ConfigMaps(testNamespace)
+			fakeClient := fake.NewSimpleClientset(convertToRuntime(tt.configMaps)[:]...).CoreV1().ConfigMaps(testNamespace)
 			service := NewConfigMapsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
 			filteredConfigMaps := service.FilterByTime(tt.configMaps, tt.cutOffDate)
 			assert.ElementsMatch(t, filteredConfigMaps, tt.expectedResult)
@@ -146,7 +115,6 @@ func Test_FilterByMaxCount(t *testing.T) {
 		configMaps         []v1.ConfigMap
 		filteredConfigMaps []v1.ConfigMap
 		keep               int
-		err                error
 	}{
 		{
 			name:       "GivenListOfConfigMaps_FilterByMaxCountOne_ThenReturnOneConfigMap",
@@ -171,8 +139,8 @@ func Test_FilterByMaxCount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeConfigMapInterface := fake.NewSimpleClientset(&tt.configMaps[0], &tt.configMaps[1]).CoreV1().ConfigMaps(testNamespace)
-			service := NewConfigMapsService(fakeConfigMapInterface, &HelperKubernetes{}, ServiceConfiguration{Batch: false})
+			fakeConfigMapInterface := fake.NewSimpleClientset(convertToRuntime(tt.configMaps)[:]...).CoreV1().ConfigMaps(testNamespace)
+			service := NewConfigMapsService(fakeConfigMapInterface, &HelperKubernetes{}, ServiceConfiguration{})
 			filteredConfigMaps := service.FilterByMaxCount(tt.configMaps, tt.keep)
 			assert.ElementsMatch(t, filteredConfigMaps, tt.filteredConfigMaps)
 		})

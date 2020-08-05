@@ -72,6 +72,14 @@ func parseConfig(cmd *cobra.Command, args []string) {
 	} else {
 		log.SetLevel(level)
 	}
+	log.WithFields(log.Fields{
+		"namespace": config.Namespace,
+		"git":       config.Git,
+		"log":       config.Log,
+		"history":   config.History,
+		"orphan":    config.Orphan,
+		"resource":  config.Resource,
+	}).Debug("Using config")
 }
 
 func loadEnvironmentVariables() {

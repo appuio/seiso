@@ -37,23 +37,6 @@ func PrintImageTags(imageTags []string, imageName string, namespace string) {
 	}
 }
 
-// PrintResources prints the given resource line by line. In batch mode, only the resource is printed, otherwise default
-// log with info level
-func PrintResources(resources []metav1.ObjectMeta, kind string) {
-	if len(resources) == 0 {
-		log.Info("Nothing found to be deleted.")
-	}
-	if config.Log.Batch {
-		for _, resource := range resources {
-			fmt.Println(kind + ": " + resource.GetName())
-		}
-	} else {
-		for _, resource := range resources {
-			log.Infof("Found %s candidate: %s/%s", kind, resource.Namespace, resource.GetName())
-		}
-	}
-}
-
 // addCommonFlagsForGit sets up the delete flag, as well as the common git flags. Adding the flags to the root cmd would make those
 // global, even for commands that do not need them, which might be overkill.
 func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
@@ -67,27 +50,18 @@ func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 		fmt.Sprintf("Sort git tags by criteria. Only effective with --tags. Allowed values: [%s, %s]", git.SortOptionVersion, git.SortOptionAlphabetic))
 }
 
-func listImages() error {
-	namespace := config.Namespace
-	imageStreams, err := openshift.ListImageStreams(namespace)
-	if err != nil {
-		return err
-	}
-	imageNames := []string{}
-	for _, image := range imageStreams {
-		imageNames = append(imageNames, image.Name)
-	}
-	log.WithFields(log.Fields{
-		"\n - namespace": namespace,
-		"\n - 📺 images":  imageNames,
-	}).Info("Please select an image. The following images are available:")
-	return nil
-}
-
-//GetListOptions returns a ListOption object based on labels
-func getListOptions(labels []string) metav1.ListOptions {
+// toListOptions converts "key=value"-labels to Kubernetes LabelSelector
+func toListOptions(labels []string) metav1.ListOptions {
 	labelSelector := fmt.Sprintf(strings.Join(labels, ","))
 	return metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
+}
+
+func missingLabelSelectorError(namespace, resource string) error {
+	return fmt.Errorf("label selector with --label expected. You can print out available labels with \"kubectl -n %s get %s --show-labels\"", namespace, resource)
+}
+
+func missingImageNameError(namespace string) error {
+	return fmt.Errorf("no image name given. On OpenShift, you can print available image streams with \"oc -n %s get imagestreams\"", namespace)
 }

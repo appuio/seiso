@@ -41,7 +41,7 @@ func init() {
 
 func validateHistoryCommandInput(args []string) error {
 	if len(args) == 0 {
-		return nil
+		return missingImageNameError(config.Namespace)
 	}
 	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
 		return fmt.Errorf("could not parse image name: %w", err)
@@ -54,9 +54,6 @@ func validateHistoryCommandInput(args []string) error {
 
 // ExecuteHistoryCleanupCommand executes the history cleanup command
 func ExecuteHistoryCleanupCommand(args []string) error {
-	if len(args) == 0 {
-		return listImages()
-	}
 	c := config.History
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 

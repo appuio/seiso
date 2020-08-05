@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/appuio/seiso/cfg"
@@ -56,7 +54,7 @@ func init() {
 
 func validateOrphanCommandInput(args []string) error {
 	if len(args) == 0 {
-		return nil
+		return missingImageNameError(config.Namespace)
 	}
 	c := config.Orphan
 	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
@@ -78,9 +76,6 @@ func validateOrphanCommandInput(args []string) error {
 
 // ExecuteOrphanCleanupCommand executes the orphan cleanup command
 func ExecuteOrphanCleanupCommand(args []string) error {
-	if len(args) == 0 {
-		return listImages()
-	}
 	c := config.Orphan
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
@@ -139,27 +134,4 @@ func parseCutOffDateTime(olderThan string) (time.Time, error) {
 		return time.Now(), err
 	}
 	return cutOffDateTime, nil
-}
-
-func splitNamespaceAndImagestream(repo string) (namespace string, image string, err error) {
-	if !strings.Contains(repo, "/") {
-		namespace = config.Namespace
-		image = repo
-	} else {
-		paths := strings.SplitAfter(repo, "/")
-		if len(paths) >= 3 {
-			namespace = paths[1]
-			image = paths[2]
-		} else {
-			namespace = paths[0]
-			image = paths[1]
-		}
-	}
-	if namespace == "" {
-		return "", "", errors.New("missing or invalid namespace")
-	}
-	if image == "" {
-		return "", "", errors.New("missing or invalid image name")
-	}
-	return strings.TrimSuffix(namespace, "/"), image, nil
 }

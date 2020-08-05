@@ -15,7 +15,6 @@ This command deletes ConfigMaps that are not being used anymore.`
 )
 
 var (
-	// configMapCmd represents a cobra command to clean up unused ConfigMaps
 	configMapCmd = &cobra.Command{
 		Use:          "configmaps",
 		Short:        "Cleans up your unused ConfigMaps in the Kubernetes cluster",
@@ -57,9 +56,11 @@ func init() {
 }
 
 func validateConfigMapCommandInput() error {
-
+	if len(config.Resource.Labels) == 0 {
+		return missingLabelSelectorError(config.Namespace, "configmaps")
+	}
 	if _, err := parseCutOffDateTime(config.Resource.OlderThan); err != nil {
-		return fmt.Errorf("Could not parse older-than flag: %w", err)
+		return fmt.Errorf("could not parse older-than flag: %w", err)
 	}
 	return nil
 }
@@ -67,24 +68,16 @@ func validateConfigMapCommandInput() error {
 func executeConfigMapCleanupCommand(service configmap.Service) error {
 	c := config.Resource
 	namespace := config.Namespace
-	if len(config.Resource.Labels) == 0 {
-		err := service.PrintNamesAndLabels(namespace)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
 
-	log.WithField("namespace", namespace).Debug("Looking for ConfigMaps")
-
-	foundConfigMaps, err := service.List(getListOptions(c.Labels))
+	log.WithField("namespace", namespace).Debug("Getting ConfigMaps")
+	foundConfigMaps, err := service.List(toListOptions(c.Labels))
 	if err != nil {
-		return fmt.Errorf("Could not retrieve config maps with labels '%s' for '%s': %w", c.Labels, namespace, err)
+		return fmt.Errorf("could not retrieve ConfigMaps with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
 	unusedConfigMaps, err := service.GetUnused(namespace, foundConfigMaps)
 	if err != nil {
-		return fmt.Errorf("Could not retrieve unused config maps for '%s': %w", namespace, err)
+		return fmt.Errorf("could not retrieve unused config maps for '%s': %w", namespace, err)
 	}
 
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
@@ -92,9 +85,16 @@ func executeConfigMapCleanupCommand(service configmap.Service) error {
 	filteredConfigMaps = service.FilterByMaxCount(filteredConfigMaps, config.History.Keep)
 
 	if config.Delete {
-		service.Delete(filteredConfigMaps)
+		err := service.Delete(filteredConfigMaps)
+		if err != nil {
+			return fmt.Errorf("could not delete ConfigMaps for '%s': %s", namespace, err)
+		}
 	} else {
-		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
+		log.WithFields(log.Fields{
+			"namespace":  namespace,
+			"keep":       config.History.Keep,
+			"older_than": c.OlderThan,
+		}).Info("Showing results")
 		service.Print(filteredConfigMaps)
 	}
 

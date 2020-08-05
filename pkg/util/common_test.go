@@ -8,31 +8,6 @@ import (
 	"time"
 )
 
-func TestFlattenStringMap(t *testing.T) {
-	tests := []struct {
-		name     string
-		labels   map[string]string
-		expected string
-	}{
-		{
-			name:     "GivenStringMap_WhenSingleEntry_ThenReturnSingleString",
-			labels:   map[string]string{"key": "value"},
-			expected: "[key=value]",
-		},
-		{
-			name:     "GivenStringMap_WhenMultipleEntries_ThenReturnMultipleStringsWithinBrackets",
-			labels:   map[string]string{"key1": "value", "key2": "value2"},
-			expected: "[key1=value, key2=value2]",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := FlattenStringMap(tt.labels)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestCompareTimestamps(t *testing.T) {
 	tests := []struct {
 		name           string
