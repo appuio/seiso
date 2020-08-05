@@ -24,10 +24,10 @@ func splitNamespaceAndImagestream(repo string) (namespace string, image string, 
 	} else {
 		paths := strings.SplitAfter(repo, "/")
 		if len(paths) >= 3 {
-			namespace = paths[1]
+			namespace = strings.TrimSuffix(paths[1], "/")
 			image = paths[2]
 		} else {
-			namespace = paths[0]
+			namespace = strings.TrimSuffix(paths[0], "/")
 			image = paths[1]
 		}
 	}
@@ -37,5 +37,5 @@ func splitNamespaceAndImagestream(repo string) (namespace string, image string, 
 	if image == "" {
 		return "", "", errors.New("missing or invalid image name")
 	}
-	return strings.TrimSuffix(namespace, "/"), image, nil
+	return namespace, image, nil
 }

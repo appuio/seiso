@@ -7,6 +7,7 @@ import (
 	"github.com/appuio/seiso/pkg/secret"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 const (
@@ -22,23 +23,8 @@ var (
 		Aliases:      []string{"secret"},
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateSecretCommandInput(); err != nil {
-				cmd.Usage()
-				return err
-			}
-
-			coreClient, err := kubernetes.NewCoreV1Client()
-			if err != nil {
-				return fmt.Errorf("cannot initiate kubernetes client")
-			}
-
-			secretService := secret.NewSecretsService(
-				coreClient.Secrets(config.Namespace),
-				kubernetes.New(),
-				secret.ServiceConfiguration{Batch: config.Log.Batch})
-			return executeSecretCleanupCommand(secretService)
-		},
+		PreRunE:      validateSecretCommandInput,
+		RunE:         executeSecretCleanupCommand,
 	}
 )
 
@@ -47,16 +33,23 @@ func init() {
 	defaults := cfg.NewDefaultConfig()
 
 	secretCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Effectively delete Secrets found")
-	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the Secrets by these labels")
+	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels,
+		"Identify the Secrets by these \"key=value\" labels")
 	secretCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
 		"Keep most current <k> Secrets; does not include currently used secret (if detected)")
 	secretCmd.PersistentFlags().String("older-than", defaults.Resource.OlderThan,
 		"Delete Secrets that are older than the duration, e.g. [1y2mo3w4d5h6m7s]")
 }
 
-func validateSecretCommandInput() error {
+func validateSecretCommandInput(cmd *cobra.Command, args []string) (returnErr error) {
+	defer showUsageOnError(cmd, returnErr)
 	if len(config.Resource.Labels) == 0 {
 		return missingLabelSelectorError(config.Namespace, "secrets")
+	}
+	for _, label := range config.Resource.Labels {
+		if !strings.Contains(label, "=") {
+			return fmt.Errorf("incorrect label format does not match expected \"key=value\" format: %s", label)
+		}
 	}
 	if _, err := parseCutOffDateTime(config.Resource.OlderThan); err != nil {
 		return fmt.Errorf("could not parse older-than flag: %w", err)
@@ -64,9 +57,18 @@ func validateSecretCommandInput() error {
 	return nil
 }
 
-func executeSecretCleanupCommand(service secret.Service) error {
+func executeSecretCleanupCommand(cmd *cobra.Command, args []string) error {
+	coreClient, err := kubernetes.NewCoreV1Client()
+	if err != nil {
+		return fmt.Errorf("cannot initiate kubernetes client: %w", err)
+	}
+
 	c := config.Resource
 	namespace := config.Namespace
+	service := secret.NewSecretsService(
+		coreClient.Secrets(namespace),
+		kubernetes.New(),
+		secret.ServiceConfiguration{Batch: config.Log.Batch})
 
 	log.WithField("namespace", namespace).Debug("Getting Secrets")
 	foundSecrets, err := service.List(toListOptions(c.Labels))

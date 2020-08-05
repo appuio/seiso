@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/appuio/seiso/pkg/kubernetes"
 	"os"
 	"strings"
 
@@ -16,12 +18,13 @@ import (
 var (
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
-		Use:              "seiso",
-		Short:            "Keeps your Kubernetes projects clean",
-		PersistentPreRun: parseConfig,
+		Use:               "seiso",
+		Short:             "Keeps your Kubernetes projects clean",
+		PersistentPreRunE: parseConfig,
 	}
 	config        = cfg.NewDefaultConfig()
 	koanfInstance = koanf.New(".")
+	version       = "undefined"
 )
 
 // Execute is the main entrypoint of the CLI, it executes child commands as given by the user-defined flags and arguments.
@@ -32,7 +35,7 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().StringP("namespace", "n", config.Namespace, "Cluster namespace of current context")
 	rootCmd.PersistentFlags().String("log.level", config.Log.LogLevel, "Log level, one of [debug info warn error fatal]")
-	rootCmd.PersistentFlags().BoolP("log.verbose", "v", config.Log.Verbose, "Shorthand for --log.level debug")
+	rootCmd.PersistentFlags().BoolP("log.verbose", "v", config.Log.Verbose, "Shorthand for \"--log.level debug\"")
 	rootCmd.PersistentFlags().BoolP("log.batch", "b", config.Log.Batch,
 		"Use Batch mode (Prints error to StdErr, StdOut is used to just print resource names, useful for piping)")
 	cobra.OnInitialize(initRootConfig)
@@ -43,13 +46,13 @@ func initRootConfig() {
 }
 
 // parseConfig reads the flags and ENV vars
-func parseConfig(cmd *cobra.Command, args []string) {
+func parseConfig(cmd *cobra.Command, args []string) error {
 
 	loadEnvironmentVariables()
 	bindFlags(cmd.PersistentFlags())
 
 	if err := koanfInstance.Unmarshal("", &config); err != nil {
-		log.WithError(err).Fatal("Could not read config")
+		return fmt.Errorf("could not read config: %w", err)
 	}
 
 	log.SetFormatter(&log.TextFormatter{
@@ -72,6 +75,14 @@ func parseConfig(cmd *cobra.Command, args []string) {
 	} else {
 		log.SetLevel(level)
 	}
+	if config.Namespace == "" {
+		namespace, err := kubernetes.Namespace()
+		if err != nil {
+			return fmt.Errorf("unable to determine default namespace from Kubeconfig and --namespace not given: %w", err)
+		}
+		config.Namespace = namespace
+	}
+	log.Infof("Seiso %s", version)
 	log.WithFields(log.Fields{
 		"namespace": config.Namespace,
 		"git":       config.Git,
@@ -80,6 +91,7 @@ func parseConfig(cmd *cobra.Command, args []string) {
 		"orphan":    config.Orphan,
 		"resource":  config.Resource,
 	}).Debug("Using config")
+	return nil
 }
 
 func loadEnvironmentVariables() {
@@ -108,6 +120,8 @@ func bindFlags(flagSet *pflag.FlagSet) {
 }
 
 // SetVersion sets the version string in the help messages
-func SetVersion(version string) {
-	rootCmd.Version = version
+func SetVersion(v string) {
+	// We need to set both properties in order to break an initialization loop
+	rootCmd.Version = v
+	version = v
 }
