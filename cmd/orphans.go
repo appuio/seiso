@@ -31,13 +31,8 @@ var (
 		Aliases:      []string{"orph", "orphan"},
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateOrphanCommandInput(args); err != nil {
-				cmd.Usage()
-				return err
-			}
-			return ExecuteOrphanCleanupCommand(args)
-		},
+		PreRunE:      validateOrphanCommandInput,
+		RunE:         ExecuteOrphanCleanupCommand,
 	}
 )
 
@@ -52,13 +47,15 @@ func init() {
 		"Delete images that match the regex, defaults to matching Git SHA commits")
 }
 
-func validateOrphanCommandInput(args []string) error {
+func validateOrphanCommandInput(cmd *cobra.Command, args []string) (returnErr error) {
+	defer showUsageOnError(cmd, returnErr)
 	if len(args) == 0 {
 		return missingImageNameError(config.Namespace)
 	}
 	c := config.Orphan
-	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
-		return err
+	namespace, image, err := splitNamespaceAndImagestream(args[0])
+	if err != nil {
+		return fmt.Errorf("could not parse image name: %w", err)
 	}
 	if _, err := parseOrphanDeletionRegex(c.OrphanDeletionRegex); err != nil {
 		return fmt.Errorf("could not parse orphan deletion pattern: %w", err)
@@ -71,11 +68,16 @@ func validateOrphanCommandInput(args []string) error {
 	if config.Git.Tag && !git.IsValidSortValue(config.Git.SortCriteria) {
 		return fmt.Errorf("invalid sort flag provided: %v", config.Git.SortCriteria)
 	}
+	log.WithFields(log.Fields{
+		"namespace": namespace,
+		"image":     image,
+	}).Debug("Using image config")
+	config.Namespace = namespace
 	return nil
 }
 
 // ExecuteOrphanCleanupCommand executes the orphan cleanup command
-func ExecuteOrphanCleanupCommand(args []string) error {
+func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
 	c := config.Orphan
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 

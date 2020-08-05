@@ -58,6 +58,12 @@ func toListOptions(labels []string) metav1.ListOptions {
 	}
 }
 
+func showUsageOnError(cmd *cobra.Command, err error) {
+	if err != nil {
+		cmd.Usage()
+	}
+}
+
 func missingLabelSelectorError(namespace, resource string) error {
 	return fmt.Errorf("label selector with --label expected. You can print out available labels with \"kubectl -n %s get %s --show-labels\"", namespace, resource)
 }

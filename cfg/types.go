@@ -1,10 +1,5 @@
 package cfg
 
-import (
-	"github.com/appuio/seiso/pkg/kubernetes"
-	log "github.com/sirupsen/logrus"
-)
-
 type (
 	// Configuration holds a strongly-typed tree of the configuration
 	Configuration struct {
@@ -47,13 +42,7 @@ type (
 
 // NewDefaultConfig retrieves the hardcoded configs with sane defaults
 func NewDefaultConfig() *Configuration {
-	namespace, err := kubernetes.Namespace()
-	if err != nil {
-		log.Warning("Unable to determine default namespace. Falling back to: default")
-		namespace = "default"
-	}
 	return &Configuration{
-		Namespace: namespace,
 		Git: GitConfig{
 			CommitLimit:  0,
 			RepoPath:     ".",

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/cleanup"
 	"github.com/appuio/seiso/pkg/git"
@@ -19,13 +18,8 @@ var (
 		Long:         `Clean up excessive image tags matching the commit hashes (prefix) of the git repository`,
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateHistoryCommandInput(args); err != nil {
-				cmd.Usage()
-				return err
-			}
-			return ExecuteHistoryCleanupCommand(args)
-		},
+		PreRunE:      validateHistoryCommandInput,
+		RunE:         ExecuteHistoryCleanupCommand,
 	}
 )
 
@@ -39,21 +33,28 @@ func init() {
 
 }
 
-func validateHistoryCommandInput(args []string) error {
+func validateHistoryCommandInput(cmd *cobra.Command, args []string) (returnErr error) {
+	defer showUsageOnError(cmd, returnErr)
 	if len(args) == 0 {
 		return missingImageNameError(config.Namespace)
 	}
-	if _, _, err := splitNamespaceAndImagestream(args[0]); err != nil {
+	namespace, image, err := splitNamespaceAndImagestream(args[0])
+	if err != nil {
 		return fmt.Errorf("could not parse image name: %w", err)
 	}
 	if config.Git.Tag && !git.IsValidSortValue(config.Git.SortCriteria) {
 		return fmt.Errorf("invalid sort flag provided: %v", config.Git.SortCriteria)
 	}
+	log.WithFields(log.Fields{
+		"namespace": namespace,
+		"image":     image,
+	}).Debug("Using image config")
+	config.Namespace = namespace
 	return nil
 }
 
 // ExecuteHistoryCleanupCommand executes the history cleanup command
-func ExecuteHistoryCleanupCommand(args []string) error {
+func ExecuteHistoryCleanupCommand(cmd *cobra.Command, args []string) error {
 	c := config.History
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
