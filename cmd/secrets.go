@@ -15,10 +15,9 @@ This command deletes secrets that are not being used anymore.`
 )
 
 var (
-	// secretCmd represents a cobra command to clean up unused secrets
 	secretCmd = &cobra.Command{
 		Use:          "secrets",
-		Short:        "Cleans up your unused secrets in the Kubernetes cluster",
+		Short:        "Cleans up your unused Secrets in the Kubernetes cluster",
 		Long:         secretCommandLongDescription,
 		Aliases:      []string{"secret"},
 		Args:         cobra.MaximumNArgs(1),
@@ -31,7 +30,7 @@ var (
 
 			coreClient, err := kubernetes.NewCoreV1Client()
 			if err != nil {
-				return fmt.Errorf("cannot initiate kubernetes core client")
+				return fmt.Errorf("cannot initiate kubernetes client")
 			}
 
 			secretService := secret.NewSecretsService(
@@ -48,7 +47,7 @@ func init() {
 	defaults := cfg.NewDefaultConfig()
 
 	secretCmd.PersistentFlags().BoolP("delete", "d", defaults.Delete, "Effectively delete Secrets found")
-	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the Secret by these labels")
+	secretCmd.PersistentFlags().StringSliceP("label", "l", defaults.Resource.Labels, "Identify the Secrets by these labels")
 	secretCmd.PersistentFlags().IntP("keep", "k", defaults.History.Keep,
 		"Keep most current <k> Secrets; does not include currently used secret (if detected)")
 	secretCmd.PersistentFlags().String("older-than", defaults.Resource.OlderThan,
@@ -56,8 +55,11 @@ func init() {
 }
 
 func validateSecretCommandInput() error {
+	if len(config.Resource.Labels) == 0 {
+		return missingLabelSelectorError(config.Namespace, "secrets")
+	}
 	if _, err := parseCutOffDateTime(config.Resource.OlderThan); err != nil {
-		return fmt.Errorf("Could not parse older-than flag: %w", err)
+		return fmt.Errorf("could not parse older-than flag: %w", err)
 	}
 	return nil
 }
@@ -65,24 +67,16 @@ func validateSecretCommandInput() error {
 func executeSecretCleanupCommand(service secret.Service) error {
 	c := config.Resource
 	namespace := config.Namespace
-	if len(config.Resource.Labels) == 0 {
-		err := service.PrintNamesAndLabels(namespace)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
 
-	log.WithField("namespace", namespace).Debug("Looking for secrets")
-
-	foundSecrets, err := service.List(getListOptions(c.Labels))
+	log.WithField("namespace", namespace).Debug("Getting Secrets")
+	foundSecrets, err := service.List(toListOptions(c.Labels))
 	if err != nil {
-		return fmt.Errorf("could not retrieve secrets with labels '%s' for '%s': %w", c.Labels, namespace, err)
+		return fmt.Errorf("could not retrieve Secrets with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
 	unusedSecrets, err := service.GetUnused(namespace, foundSecrets)
 	if err != nil {
-		return fmt.Errorf("could not retrieve unused secrets for '%s': %w", namespace, err)
+		return fmt.Errorf("could not retrieve unused Secrets for '%s': %w", namespace, err)
 	}
 
 	cutOffDateTime, _ := parseCutOffDateTime(c.OlderThan)
@@ -93,10 +87,14 @@ func executeSecretCleanupCommand(service secret.Service) error {
 	if config.Delete {
 		err := service.Delete(filteredSecrets)
 		if err != nil {
-			return fmt.Errorf("could not delete secrets for '%s': %s", namespace, err)
+			return fmt.Errorf("could not delete Secrets for '%s': %s", namespace, err)
 		}
 	} else {
-		log.Infof("Showing results for --keep=%d and --older-than=%s", config.History.Keep, c.OlderThan)
+		log.WithFields(log.Fields{
+			"namespace":  namespace,
+			"keep":       config.History.Keep,
+			"older_than": c.OlderThan,
+		}).Info("Showing results")
 		service.Print(filteredSecrets)
 	}
 

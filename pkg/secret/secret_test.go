@@ -31,39 +31,6 @@ func (k HelperKubernetesErr) ResourceContains(namespace, value string, resource 
 
 var testNamespace = "testNamespace"
 
-func Test_PrintNamesAndLabels(t *testing.T) {
-
-	tests := []struct {
-		name      string
-		secrets   []v1.Secret
-		expectErr bool
-		reaction  test.ReactionFunc
-	}{
-		{
-			name:      "GivenListOfSecrets_WhenListError_ThenReturnError",
-			secrets:   []v1.Secret{},
-			reaction:  createErrorReactor(),
-			expectErr: true,
-		},
-		// TODO: Add test case that asserts for correct lines printed
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset(convertToRuntime(tt.secrets)[:]...)
-			clientset.PrependReactor("list", "secrets", tt.reaction)
-			fakeClient := clientset.CoreV1().Secrets(testNamespace)
-			service := NewSecretsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
-			err := service.PrintNamesAndLabels(testNamespace)
-			if tt.expectErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func Test_List(t *testing.T) {
 
 	tests := []struct {

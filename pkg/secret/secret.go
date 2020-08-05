@@ -17,8 +17,6 @@ import (
 
 type (
 	Service interface {
-		// PrintNamesAndLabels return the names and labels of all secrets
-		PrintNamesAndLabels(namespace string) error
 		// List returns a list of Secrets from a namespace
 		List(listOptions metav1.ListOptions) (resources []v1.Secret, err error)
 		// GetUnused returns unused Secrets.
@@ -52,18 +50,6 @@ func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes
 		helper:        helper,
 		configuration: configuration,
 	}
-}
-
-func (ss SecretsService) PrintNamesAndLabels(namespace string) error {
-	secrets, err := ss.List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	log.Infof("Following Secrets are available in namespace %s", namespace)
-	for _, s := range secrets {
-		log.Infof("Name: %s, labels: %s", s.Name, util.FlattenStringMap(s.Labels))
-	}
-	return nil
 }
 
 func (ss SecretsService) List(listOptions metav1.ListOptions) ([]v1.Secret, error) {
