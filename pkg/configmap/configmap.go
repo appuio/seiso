@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -94,7 +95,7 @@ func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigM
 func (cms ConfigMapsService) Delete(configMaps []v1.ConfigMap) error {
 	for _, resource := range configMaps {
 		err := cms.client.Delete(resource.Name, &metav1.DeleteOptions{})
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 		if cms.configuration.Batch {
