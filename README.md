@@ -1,11 +1,10 @@
 # Seiso
 
-[![dockeri.co](https://dockeri.co/image/appuio/seiso)](https://hub.docker.com/r/appuio/seiso)
-
 [![](https://img.shields.io/github/workflow/status/appuio/seiso/Build)](https://github.com/appuio/seiso/actions)
-[![](https://img.shields.io/github/v/release/appuio/seiso?include_prereleases)](https://github.com/appuio/seiso/releases)
-[![](https://img.shields.io/github/issues-raw/appuio/seiso)](https://github.com/appuio/seiso/issues)
-[![](https://img.shields.io/github/issues-pr-raw/appuio/seiso)](https://github.com/appuio/seiso/pulls)
+[![](https://img.shields.io/github/v/release/appuio/seiso)](https://github.com/appuio/seiso/releases)
+![](https://img.shields.io/github/go-mod/go-version/appuio/seiso)
+[![](https://img.shields.io/github/downloads/appuio/seiso/total)](https://github.com/appuio/seiso/releases)
+[![](https://img.shields.io/docker/pulls/appuio/seiso)](https://img.shields.io/docker/pulls/appuio/seiso)
 [![](https://img.shields.io/github/license/appuio/seiso)](https://github.com/appuio/seiso/blob/master/LICENSE)
 
 Inspired by Robert C. Martin's book, [Clean Code](https://www.investigatii.md/uploads/resurse/Clean_Code.pdf), foreword, page xx:
