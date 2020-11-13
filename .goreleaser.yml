@@ -51,6 +51,7 @@ changelog:
     - '^Docs:'
     - '^Test:'
     - '^Refactor:'
+    - '^Merge pull request'
 
 release:
   github:
