@@ -1,6 +1,6 @@
 module github.com/appuio/seiso
 
-go 1.14
+go 1.15
 
 require (
 	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
