@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -95,7 +96,7 @@ func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unu
 func (ss SecretsService) Delete(secrets []v1.Secret) error {
 	for _, resource := range secrets {
 		err := ss.client.Delete(resource.Name, &metav1.DeleteOptions{})
-		if err != nil {
+		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 		if ss.configuration.Batch {
