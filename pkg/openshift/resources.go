@@ -48,6 +48,7 @@ func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []s
 
 			if contains {
 				activeImageStreamTags = append(activeImageStreamTags, imageStreamTag)
+				log.Infof("Found active image stream tag: %s/%s:%s", namespace, imageStream, imageStreamTag)
 			}
 		})
 	})
