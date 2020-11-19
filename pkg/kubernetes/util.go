@@ -36,7 +36,9 @@ func (k *kubernetesImpl) ResourceContains(namespace, value string, resource sche
 		return false, err
 	}
 	for _, item := range objectlist.Items {
-		return ObjectContains(item.Object, value), nil
+		if ObjectContains(item.Object, value) {
+			return true, nil
+		}
 	}
 
 	return false, nil
