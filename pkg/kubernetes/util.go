@@ -6,6 +6,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -35,11 +36,8 @@ func (k *kubernetesImpl) ResourceContains(namespace, value string, resource sche
 	if err != nil {
 		return false, err
 	}
-	for _, item := range objectlist.Items {
-		return ObjectContains(item.Object, value), nil
-	}
 
-	return false, nil
+	return UnstructuredListContains(objectlist, value), nil
 }
 
 func (k *kubernetesImpl) initClient() error {
@@ -83,4 +81,13 @@ func ObjectContains(genericObject interface{}, value string) bool {
 	default:
 		return false
 	}
+}
+
+func UnstructuredListContains(unstructuredList *unstructured.UnstructuredList, value string) bool {
+	for _, item := range unstructuredList.Items {
+		if ObjectContains(item.Object, value) {
+			return true
+		}
+	}
+	return false
 }
