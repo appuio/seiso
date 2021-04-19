@@ -1,32 +1,61 @@
-.PHONY: all build clean dist fmt tests
+# Set Shell to bash, otherwise some targets fail with dash/zsh etc.
+SHELL := /bin/bash
 
-all: clean lint tests build
+# Disable built-in rules
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
+.SUFFIXES:
+.SECONDARY:
 
-fmt:
-	@echo 'Reformat Go code ...'
+PROJECT_ROOT_DIR = .
+include Makefile.vars.mk
+
+go_build ?= go build -o $(BIN_FILENAME) main.go
+
+all: build ## Invokes the build target
+
+.PHONY: test
+test: ## Run tests
+	go test ./... -coverprofile cover.out
+
+.PHONY: build
+build: fmt vet $(BIN_FILENAME) ## Build manager binary
+
+.PHONY: run
+run: fmt vet ## Run against the configured Kubernetes cluster in ~/.kube/config
+	go run ./main.go
+
+.PHONY: fmt
+fmt: ## Run go fmt against code
 	go fmt ./...
 
-vet:
-	@echo 'Examine Go code ...'
+.PHONY: vet
+vet: ## Run go vet against code
 	go vet ./...
 
-lint: fmt vet
+.PHONY: lint
+lint: fmt vet ## Invokes the fmt and vet targets
 	@echo 'Check for uncommitted changes ...'
 	git diff --exit-code
 
-test:
-	@echo 'Run all tests ...'
-	go test --cover ./...
+.PHONY: docker-build
+docker-build: export GOOS = linux
+docker-build: $(BIN_FILENAME) ## Build the docker image
+	docker build . -t $(DOCKER_IMG) -t $(QUAY_IMG)
 
-build:
-	@echo 'Build seiso binary ...'
-	go build
+.PHONY: docker-push
+docker-push: ## Push the docker image
+	docker push $(DOCKER_IMG)
+	docker push $(QUAY_IMG)
 
-dist:
-	@echo 'Build all distributions ...'
-	goreleaser release --snapshot --rm-dist --skip-sign
+clean: ## Cleans up the generated resources
+	rm -r cover.out $(BIN_FILENAME) || true
 
-clean:
-	@echo 'Clean up test cache and build artifacts ...'
-	go clean -testcache
-	rm -rf seiso dist/
+.PHONY: help
+help: ## Show this help
+	@grep -E -h '\s##\s' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: $(BIN_FILENAME)
+$(BIN_FILENAME): export CGO_ENABLED = 0
+$(BIN_FILENAME):
+	$(go_build)
