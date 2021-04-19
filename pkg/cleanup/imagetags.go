@@ -1,6 +1,7 @@
 package cleanup
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -139,8 +140,8 @@ func match(imageTag, value string, matchOption MatchOption) bool {
 }
 
 // FilterActiveImageTags first gets all actively used image tags from imageStreamTags, then filters them out from matchingTags
-func FilterActiveImageTags(namespace string, imageName string, imageStreamTags []string, matchingTags *[]string) ([]string, error) {
-	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, imageName, imageStreamTags)
+func FilterActiveImageTags(ctx context.Context, namespace string, imageName string, imageStreamTags []string, matchingTags *[]string) ([]string, error) {
+	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(ctx, namespace, imageName, imageStreamTags)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve active image tags from %v/%v': %w", namespace, imageName, err)
 	}

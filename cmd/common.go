@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,11 +14,11 @@ import (
 )
 
 // DeleteImages deletes a list of image tags
-func DeleteImages(imageTags []string, imageName string, namespace string) {
+func DeleteImages(ctx context.Context, imageTags []string, imageName string, namespace string) {
 	for _, inactiveTag := range imageTags {
 		log.Infof("Deleting %s/%s:%s", namespace, imageName, inactiveTag)
 
-		if err := openshift.DeleteImageStreamTag(namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
+		if err := openshift.DeleteImageStreamTag(ctx, namespace, openshift.BuildImageStreamTagName(imageName, inactiveTag)); err != nil {
 			log.WithError(err).Errorf("Failed to delete %s/%s:%s", namespace, imageName, inactiveTag)
 		}
 	}
@@ -52,7 +53,7 @@ func addCommonFlagsForGit(cmd *cobra.Command, defaults *cfg.Configuration) {
 
 // toListOptions converts "key=value"-labels to Kubernetes LabelSelector
 func toListOptions(labels []string) metav1.ListOptions {
-	labelSelector := fmt.Sprintf(strings.Join(labels, ","))
+	labelSelector := fmt.Sprint(strings.Join(labels, ","))
 	return metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}

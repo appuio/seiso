@@ -2,8 +2,16 @@
   "extends": [
     "config:base"
   ],
-  "ignorePaths": [
-    "go.mod",
-    "go.sum"
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "labels": [
+    "dependency"
+  ],
+  "packageRules": [
+    {
+      "packagePatterns": ["^k8s.io", "^sigs.k8s.io"],
+      "enabled": false
+    }
   ]
 }

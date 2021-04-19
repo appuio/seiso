@@ -1,23 +1,25 @@
 package secret
 
 import (
+	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/appuio/seiso/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/fake"
 	test "k8s.io/client-go/testing"
-	"testing"
-	"time"
 )
 
 type HelperKubernetes struct{}
 type HelperKubernetesErr struct{}
 
-func (k HelperKubernetes) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
+func (k HelperKubernetes) ResourceContains(_ context.Context, namespace, value string, resource schema.GroupVersionResource) (bool, error) {
 	if "nameA" == value {
 		return false, nil
 	} else {
@@ -25,7 +27,7 @@ func (k HelperKubernetes) ResourceContains(namespace, value string, resource sch
 	}
 }
 
-func (k HelperKubernetesErr) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
+func (k HelperKubernetesErr) ResourceContains(_ context.Context, namespace, value string, resource schema.GroupVersionResource) (bool, error) {
 	return false, errors.New("error")
 }
 
@@ -57,6 +59,7 @@ func Test_List(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			clientset := fake.NewSimpleClientset(convertToRuntime(tt.secrets)[:]...)
 			if tt.reaction != nil {
 				clientset.PrependReactor("list", "secrets", tt.reaction)
@@ -64,7 +67,7 @@ func Test_List(t *testing.T) {
 			fakeClient := clientset.CoreV1().Secrets(testNamespace)
 			service := NewSecretsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
 
-			list, err := service.List(metav1.ListOptions{})
+			list, err := service.List(ctx, metav1.ListOptions{})
 			if tt.expectErr {
 				assert.Error(t, err)
 				return
@@ -169,17 +172,18 @@ func Test_Delete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			clientset := fake.NewSimpleClientset(convertToRuntime(tt.secrets)[:]...)
 			if tt.reaction != nil {
 				clientset.PrependReactor("delete", "secrets", tt.reaction)
 			}
 			fakeClient := clientset.CoreV1().Secrets(testNamespace)
 			service := NewSecretsService(fakeClient, &HelperKubernetes{}, ServiceConfiguration{})
-			err := service.Delete(tt.secrets)
+			err := service.Delete(ctx, tt.secrets)
 			if tt.expectErr {
 				assert.Error(t, err)
 			}
-			list, err := fakeClient.List(metav1.ListOptions{})
+			list, err := fakeClient.List(context.TODO(), metav1.ListOptions{})
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, tt.expectedRemaining, list.Items)
 		})
@@ -208,12 +212,13 @@ func Test_GetUnused(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			var helper kubernetes.Kubernetes = HelperKubernetes{}
 			if tt.expectErr {
 				helper = HelperKubernetesErr{}
 			}
 			service := NewSecretsService(nil, helper, ServiceConfiguration{})
-			unused, err := service.GetUnused(testNamespace, tt.allSecrets)
+			unused, err := service.GetUnused(ctx, testNamespace, tt.allSecrets)
 			if tt.expectErr {
 				assert.Error(t, err)
 				return

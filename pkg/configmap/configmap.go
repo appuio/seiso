@@ -1,7 +1,11 @@
 package configmap
 
 import (
+	"context"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/appuio/seiso/pkg/kubernetes"
 	"github.com/appuio/seiso/pkg/openshift"
 	"github.com/appuio/seiso/pkg/util"
@@ -12,8 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"sort"
-	"time"
 )
 
 type (
@@ -52,15 +54,15 @@ func NewConfigMapsService(client core.ConfigMapInterface, helper kubernetes.Kube
 	}
 }
 
-func (cms ConfigMapsService) List(listOptions metav1.ListOptions) ([]v1.ConfigMap, error) {
-	configMaps, err := cms.client.List(listOptions)
+func (cms ConfigMapsService) List(ctx context.Context, listOptions metav1.ListOptions) ([]v1.ConfigMap, error) {
+	configMaps, err := cms.client.List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
 	return configMaps.Items, nil
 }
 
-func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigMap) (unusedConfigMaps []v1.ConfigMap, funcErr error) {
+func (cms ConfigMapsService) GetUnused(ctx context.Context, namespace string, configMaps []v1.ConfigMap) (unusedConfigMaps []v1.ConfigMap, funcErr error) {
 	var usedConfigMaps []v1.ConfigMap
 	funk.ForEach(openshift.PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
 		funk.ForEach(configMaps, func(resource v1.ConfigMap) {
@@ -71,7 +73,7 @@ func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigM
 				// already marked as existing, skip this
 				return
 			}
-			contains, err := cms.helper.ResourceContains(namespace, resourceName, predefinedResource)
+			contains, err := cms.helper.ResourceContains(ctx, namespace, resourceName, predefinedResource)
 			if err != nil {
 				funcErr = err
 				return
@@ -92,9 +94,9 @@ func (cms ConfigMapsService) GetUnused(namespace string, configMaps []v1.ConfigM
 	return unusedConfigMaps, funcErr
 }
 
-func (cms ConfigMapsService) Delete(configMaps []v1.ConfigMap) error {
+func (cms ConfigMapsService) Delete(ctx context.Context, configMaps []v1.ConfigMap) error {
 	for _, resource := range configMaps {
-		err := cms.client.Delete(resource.Name, &metav1.DeleteOptions{})
+		err := cms.client.Delete(ctx, resource.Name, metav1.DeleteOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}

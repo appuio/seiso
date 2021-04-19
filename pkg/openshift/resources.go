@@ -1,6 +1,8 @@
 package openshift
 
 import (
+	"context"
+
 	"github.com/appuio/seiso/pkg/kubernetes"
 	imagev1 "github.com/openshift/api/image/v1"
 	log "github.com/sirupsen/logrus"
@@ -24,7 +26,7 @@ var (
 )
 
 // GetActiveImageStreamTags retrieves the image streams tags referenced in some Kubernetes resources
-func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []string) (activeImageStreamTags []string, funcError error) {
+func GetActiveImageStreamTags(ctx context.Context, namespace, imageStream string, imageStreamTags []string) (activeImageStreamTags []string, funcError error) {
 	log.WithFields(log.Fields{
 		"namespace": namespace,
 		"imageName": imageStream,
@@ -40,7 +42,7 @@ func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []s
 				return
 			}
 			image := BuildImageStreamTagName(imageStream, imageStreamTag)
-			contains, err := helper.ResourceContains(namespace, image, predefinedResource)
+			contains, err := helper.ResourceContains(ctx, namespace, image, predefinedResource)
 			if err != nil {
 				funcError = err
 				return
@@ -55,14 +57,14 @@ func GetActiveImageStreamTags(namespace, imageStream string, imageStreamTags []s
 }
 
 // GetImageStreamTags returns the tags of an image stream older than the specified time
-func GetImageStreamTags(namespace, imageStreamName string) ([]imagev1.NamedTagEventList, error) {
+func GetImageStreamTags(ctx context.Context, namespace, imageStreamName string) ([]imagev1.NamedTagEventList, error) {
 
 	imageClient, err := NewImageV1Client()
 	if err != nil {
 		return nil, err
 	}
 
-	imageStream, err := imageClient.ImageStreams(namespace).Get(imageStreamName, metav1.GetOptions{})
+	imageStream, err := imageClient.ImageStreams(namespace).Get(ctx, imageStreamName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -71,13 +73,13 @@ func GetImageStreamTags(namespace, imageStreamName string) ([]imagev1.NamedTagEv
 }
 
 // DeleteImageStreamTag deletes the image stream tag
-func DeleteImageStreamTag(namespace, name string) error {
+func DeleteImageStreamTag(ctx context.Context, namespace, name string) error {
 	imageclient, err := NewImageV1Client()
 	if err != nil {
 		return err
 	}
 
-	return imageclient.ImageStreamTags(namespace).Delete(name, &metav1.DeleteOptions{})
+	return imageclient.ImageStreamTags(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }
 
 // BuildImageStreamTagName combines a name of an image stream and a tag
@@ -86,13 +88,13 @@ func BuildImageStreamTagName(imageStream string, imageStreamTag string) string {
 }
 
 // ListImageStreams lists all available image streams in a namespace
-func ListImageStreams(namespace string) ([]imagev1.ImageStream, error) {
+func ListImageStreams(ctx context.Context, namespace string) ([]imagev1.ImageStream, error) {
 	imageClient, err := NewImageV1Client()
 	if err != nil {
 		return nil, err
 	}
 
-	imageStreams, err := imageClient.ImageStreams(namespace).List(metav1.ListOptions{})
+	imageStreams, err := imageClient.ImageStreams(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

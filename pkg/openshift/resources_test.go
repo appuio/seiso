@@ -1,6 +1,7 @@
 package openshift
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -16,7 +17,7 @@ type (
 	}
 )
 
-func (m *MockHelper) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
+func (m *MockHelper) ResourceContains(_ context.Context, namespace, value string, resource schema.GroupVersionResource) (bool, error) {
 	args := m.Called(namespace, value, resource)
 	return args.Bool(0), args.Error(1)
 }
@@ -78,6 +79,7 @@ func TestGetActiveImageStreamTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			helper = tt.helperMock
 			for _, resource := range PredefinedResources {
 				for _, tag := range tt.args.imageStreamTags {
@@ -91,7 +93,7 @@ func TestGetActiveImageStreamTags(t *testing.T) {
 						Return(value, err)
 				}
 			}
-			result, err := GetActiveImageStreamTags(tt.args.namespace, tt.args.imageStream, tt.args.imageStreamTags)
+			result, err := GetActiveImageStreamTags(ctx, tt.args.namespace, tt.args.imageStream, tt.args.imageStreamTags)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
