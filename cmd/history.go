@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/cleanup"
 	"github.com/appuio/seiso/pkg/git"
@@ -56,9 +58,10 @@ func validateHistoryCommandInput(cmd *cobra.Command, args []string) (returnErr e
 // ExecuteHistoryCleanupCommand executes the history cleanup command
 func ExecuteHistoryCleanupCommand(cmd *cobra.Command, args []string) error {
 	c := config.History
+	ctx := context.Background()
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
-	imageStreamObjectTags, err := openshift.GetImageStreamTags(namespace, imageName)
+	imageStreamObjectTags, err := openshift.GetImageStreamTags(ctx, namespace, imageName)
 	if err != nil {
 		return fmt.Errorf("could not retrieve image stream '%s/%s': %w", namespace, imageName, err)
 	}
@@ -79,7 +82,7 @@ func ExecuteHistoryCleanupCommand(cmd *cobra.Command, args []string) error {
 	}
 	var matchingTags = cleanup.GetMatchingTags(&gitCandidates, &imageStreamTags, matchOption)
 
-	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(namespace, imageName, matchingTags)
+	activeImageStreamTags, err := openshift.GetActiveImageStreamTags(ctx, namespace, imageName, matchingTags)
 	if err != nil {
 		return fmt.Errorf("could not retrieve active image stream tags for '%s/%s': %w", namespace, imageName, err)
 	}
@@ -94,7 +97,7 @@ func ExecuteHistoryCleanupCommand(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if config.Delete {
-		DeleteImages(inactiveTags, imageName, namespace)
+		DeleteImages(ctx, inactiveTags, imageName, namespace)
 	} else {
 		log.Infof("Showing results for --commit-limit=%d and --keep=%d", config.Git.CommitLimit, c.Keep)
 		PrintImageTags(inactiveTags, imageName, namespace)

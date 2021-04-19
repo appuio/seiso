@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"strings"
+
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/kubernetes"
 	"github.com/appuio/seiso/pkg/secret"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 const (
@@ -63,6 +65,7 @@ func executeSecretCleanupCommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot initiate kubernetes client: %w", err)
 	}
 
+	ctx := context.Background()
 	c := config.Resource
 	namespace := config.Namespace
 	service := secret.NewSecretsService(
@@ -71,12 +74,12 @@ func executeSecretCleanupCommand(cmd *cobra.Command, args []string) error {
 		secret.ServiceConfiguration{Batch: config.Log.Batch})
 
 	log.WithField("namespace", namespace).Debug("Getting Secrets")
-	foundSecrets, err := service.List(toListOptions(c.Labels))
+	foundSecrets, err := service.List(ctx, toListOptions(c.Labels))
 	if err != nil {
 		return fmt.Errorf("could not retrieve Secrets with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
-	unusedSecrets, err := service.GetUnused(namespace, foundSecrets)
+	unusedSecrets, err := service.GetUnused(ctx, namespace, foundSecrets)
 	if err != nil {
 		return fmt.Errorf("could not retrieve unused Secrets for '%s': %w", namespace, err)
 	}
@@ -87,7 +90,7 @@ func executeSecretCleanupCommand(cmd *cobra.Command, args []string) error {
 	filteredSecrets = service.FilterByMaxCount(filteredSecrets, config.History.Keep)
 
 	if config.Delete {
-		err := service.Delete(filteredSecrets)
+		err := service.Delete(ctx, filteredSecrets)
 		if err != nil {
 			return fmt.Errorf("could not delete Secrets for '%s': %s", namespace, err)
 		}

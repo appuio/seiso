@@ -1,7 +1,11 @@
 package secret
 
 import (
+	"context"
 	"fmt"
+	"sort"
+	"time"
+
 	"github.com/appuio/seiso/pkg/kubernetes"
 	"github.com/appuio/seiso/pkg/openshift"
 	"github.com/appuio/seiso/pkg/util"
@@ -12,18 +16,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"sort"
-	"time"
 )
 
 type (
 	Service interface {
 		// List returns a list of Secrets from a namespace
-		List(listOptions metav1.ListOptions) (resources []v1.Secret, err error)
+		List(ctx context.Context, listOptions metav1.ListOptions) (resources []v1.Secret, err error)
 		// GetUnused returns unused Secrets.
-		GetUnused(namespace string, secrets []v1.Secret) (unusedSecrets []v1.Secret, funcErr error)
+		GetUnused(ctx context.Context, namespace string, secrets []v1.Secret) (unusedSecrets []v1.Secret, funcErr error)
 		// Delete removes the given Secrets. Errors are logged only.
-		Delete(secrets []v1.Secret) error
+		Delete(ctx context.Context, secrets []v1.Secret) error
 		// FilterByTime returns Secrets which are older than specified date
 		FilterByTime(secrets []v1.Secret, olderThan time.Time) (filteredSecrets []v1.Secret)
 		// FilterByMaxCount returns the latest resources until limited by <keep>. The list of secrets is sorted by
@@ -53,15 +55,15 @@ func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes
 	}
 }
 
-func (ss SecretsService) List(listOptions metav1.ListOptions) ([]v1.Secret, error) {
-	secrets, err := ss.client.List(listOptions)
+func (ss SecretsService) List(ctx context.Context, listOptions metav1.ListOptions) ([]v1.Secret, error) {
+	secrets, err := ss.client.List(ctx, listOptions)
 	if err != nil {
 		return nil, err
 	}
 	return secrets.Items, nil
 }
 
-func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unusedResources []v1.Secret, funcErr error) {
+func (ss SecretsService) GetUnused(ctx context.Context, namespace string, resources []v1.Secret) (unusedResources []v1.Secret, funcErr error) {
 	var usedSecrets []v1.Secret
 	funk.ForEach(openshift.PredefinedResources, func(predefinedResource schema.GroupVersionResource) {
 		funk.ForEach(resources, func(secret v1.Secret) {
@@ -72,7 +74,7 @@ func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unu
 				// already marked as existing, skip this
 				return
 			}
-			contains, err := ss.helper.ResourceContains(namespace, secretName, predefinedResource)
+			contains, err := ss.helper.ResourceContains(ctx, namespace, secretName, predefinedResource)
 			if err != nil {
 				funcErr = err
 				return
@@ -93,9 +95,9 @@ func (ss SecretsService) GetUnused(namespace string, resources []v1.Secret) (unu
 	return unusedResources, funcErr
 }
 
-func (ss SecretsService) Delete(secrets []v1.Secret) error {
+func (ss SecretsService) Delete(ctx context.Context, secrets []v1.Secret) error {
 	for _, resource := range secrets {
-		err := ss.client.Delete(resource.Name, &metav1.DeleteOptions{})
+		err := ss.client.Delete(ctx, resource.Name, metav1.DeleteOptions{})
 		if err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}

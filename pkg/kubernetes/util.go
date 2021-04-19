@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"strings"
 
 	"k8s.io/client-go/dynamic"
@@ -13,7 +14,7 @@ import (
 type (
 	// Kubernetes defines the interface to interact with K8s
 	Kubernetes interface {
-		ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error)
+		ResourceContains(ctx context.Context, namespace, value string, resource schema.GroupVersionResource) (bool, error)
 	}
 	// kubernetesImpl is an implementation of the interface. (Better name? introduced for better testing support)
 	kubernetesImpl struct {
@@ -27,12 +28,12 @@ func New() Kubernetes {
 }
 
 // ResourceContains evaluates if a given resource contains a given string
-func (k *kubernetesImpl) ResourceContains(namespace, value string, resource schema.GroupVersionResource) (bool, error) {
+func (k *kubernetesImpl) ResourceContains(ctx context.Context, namespace, value string, resource schema.GroupVersionResource) (bool, error) {
 	err := k.initClient()
 	if err != nil {
 		return false, err
 	}
-	objectlist, err := k.client.Resource(resource).Namespace(namespace).List(metav1.ListOptions{})
+	objectlist, err := k.client.Resource(resource).Namespace(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return false, err
 	}

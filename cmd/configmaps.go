@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"strings"
+
 	"github.com/appuio/seiso/cfg"
 	"github.com/appuio/seiso/pkg/configmap"
 	"github.com/appuio/seiso/pkg/kubernetes"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 const (
@@ -63,6 +65,7 @@ func executeConfigMapCleanupCommand(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot initiate kubernetes client: %w", err)
 	}
 
+	ctx := context.Background()
 	c := config.Resource
 	namespace := config.Namespace
 	service := configmap.NewConfigMapsService(
@@ -71,12 +74,12 @@ func executeConfigMapCleanupCommand(cmd *cobra.Command, args []string) error {
 		configmap.ServiceConfiguration{Batch: config.Log.Batch})
 
 	log.WithField("namespace", namespace).Debug("Getting ConfigMaps")
-	foundConfigMaps, err := service.List(toListOptions(c.Labels))
+	foundConfigMaps, err := service.List(ctx, toListOptions(c.Labels))
 	if err != nil {
 		return fmt.Errorf("could not retrieve ConfigMaps with labels '%s' for '%s': %w", c.Labels, namespace, err)
 	}
 
-	unusedConfigMaps, err := service.GetUnused(namespace, foundConfigMaps)
+	unusedConfigMaps, err := service.GetUnused(ctx, namespace, foundConfigMaps)
 	if err != nil {
 		return fmt.Errorf("could not retrieve unused config maps for '%s': %w", namespace, err)
 	}
@@ -86,7 +89,7 @@ func executeConfigMapCleanupCommand(cmd *cobra.Command, args []string) error {
 	filteredConfigMaps = service.FilterByMaxCount(filteredConfigMaps, config.History.Keep)
 
 	if config.Delete {
-		err := service.Delete(filteredConfigMaps)
+		err := service.Delete(ctx, filteredConfigMaps)
 		if err != nil {
 			return fmt.Errorf("could not delete ConfigMaps for '%s': %s", namespace, err)
 		}

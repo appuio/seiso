@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"time"
@@ -79,9 +80,10 @@ func validateOrphanCommandInput(cmd *cobra.Command, args []string) (returnErr er
 // ExecuteOrphanCleanupCommand executes the orphan cleanup command
 func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
 	c := config.Orphan
+	ctx := context.Background()
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])
 
-	allImageTags, err := openshift.GetImageStreamTags(namespace, imageName)
+	allImageTags, err := openshift.GetImageStreamTags(ctx, namespace, imageName)
 	if err != nil {
 		return fmt.Errorf("could not retrieve image stream '%v/%v': %w", namespace, imageName, err)
 	}
@@ -101,7 +103,7 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
 	imageTagList := cleanup.FilterImageTagsByTime(&allImageTags, cutOffDateTime)
 	imageTagList = cleanup.FilterOrphanImageTags(&gitCandidates, &imageTagList, matchOption)
 	imageTagList = cleanup.FilterByRegex(&imageTagList, orphanIncludeRegex)
-	imageTagList, err = cleanup.FilterActiveImageTags(namespace, imageName, imageTagList, &imageTagList)
+	imageTagList, err = cleanup.FilterActiveImageTags(ctx, namespace, imageName, imageTagList, &imageTagList)
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if config.Delete {
-		DeleteImages(imageTagList, imageName, namespace)
+		DeleteImages(ctx, imageTagList, imageName, namespace)
 	} else {
 		log.Infof("Showing results for --commit-limit=%d and --older-than=%s", config.Git.CommitLimit, c.OlderThan)
 		PrintImageTags(imageTagList, imageName, namespace)
