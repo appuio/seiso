@@ -35,8 +35,9 @@ type (
 	}
 	// ResourceConfig configures the resources and secrets
 	ResourceConfig struct {
-		Labels    []string `koanf:"label"`
-		OlderThan string   `koanf:"older-than"`
+		Labels      []string `koanf:"label"`
+		OlderThan   string   `koanf:"older-than"`
+		DeleteAfter string   `koanf:"delete-after"`
 	}
 )
 
@@ -57,8 +58,9 @@ func NewDefaultConfig() *Configuration {
 			OrphanDeletionRegex: "^[a-z0-9]{40}$",
 		},
 		Resource: ResourceConfig{
-			Labels:    []string{},
-			OlderThan: "1w",
+			Labels:      []string{},
+			OlderThan:   "1w",
+			DeleteAfter: "24h",
 		},
 		Delete: false,
 		Log: LogConfig{

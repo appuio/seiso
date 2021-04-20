@@ -19,22 +19,6 @@ import (
 )
 
 type (
-	Service interface {
-		// List returns a list of ConfigMaps from a namespace
-		List(listOptions metav1.ListOptions) (configMaps []v1.ConfigMap, err error)
-		// GetUnused return unused ConfigMaps
-		GetUnused(namespace string, configMaps []v1.ConfigMap) (unusedConfigMaps []v1.ConfigMap, funcErr error)
-		// Delete removes the given ConfigMaps
-		Delete(configMaps []v1.ConfigMap) error
-		// FilterByTime returns ConfigMaps which are older than specified date
-		FilterByTime(configMaps []v1.ConfigMap, olderThan time.Time) (filteredConfigMaps []v1.ConfigMap)
-		// FilterByMaxCount returns the latest resources until limited by <keep>. The list of ConfigMaps is sorted by
-		// CreationTimestamp, with newest entries first.
-		FilterByMaxCount(configMaps []v1.ConfigMap, keep int) (filteredConfigMaps []v1.ConfigMap)
-		// Print outputs the given ConfigMaps line by line. In batch mode, only the ConfigMap name is printed, otherwise default
-		// log with info level
-		Print(configMaps []v1.ConfigMap)
-	}
 	ConfigMapsService struct {
 		configuration ServiceConfiguration
 		client        core.ConfigMapInterface

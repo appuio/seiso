@@ -10,6 +10,7 @@ import (
 	"github.com/appuio/seiso/pkg/cleanup"
 	"github.com/appuio/seiso/pkg/git"
 	"github.com/appuio/seiso/pkg/openshift"
+	"github.com/appuio/seiso/pkg/util"
 	"github.com/karrick/tparse"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -133,7 +134,7 @@ func parseCutOffDateTime(olderThan string) (time.Time, error) {
 	if len(olderThan) == 0 {
 		return time.Now(), nil
 	}
-	cutOffDateTime, err := tparse.ParseNow(time.RFC3339, "now-"+olderThan)
+	cutOffDateTime, err := tparse.ParseNow(util.TimeFormat, "now-"+olderThan)
 	if err != nil {
 		return time.Now(), err
 	}

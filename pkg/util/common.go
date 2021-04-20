@@ -1,8 +1,14 @@
 package util
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// TimeFormat defines the format to be used for dates
+	TimeFormat = time.RFC3339
 )
 
 // IsOlderThan returns true if the given resource is older than the specified timestamp. If the resource does not have
