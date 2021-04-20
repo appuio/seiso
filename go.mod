@@ -3,12 +3,11 @@ module github.com/appuio/seiso
 go 1.16
 
 require (
-	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
 	github.com/go-logr/logr v0.3.0 // indirect
 	github.com/googleapis/gnostic v0.5.1 // indirect
 	github.com/hashicorp/go-version v1.3.0
 	github.com/imdario/mergo v0.3.10 // indirect
-	github.com/karrick/tparse v2.4.2+incompatible
+	github.com/karrick/tparse v2.8.2+incompatible
 	github.com/knadh/koanf v0.16.0
 	github.com/onsi/ginkgo v1.14.1 // indirect
 	github.com/onsi/gomega v1.10.2 // indirect
