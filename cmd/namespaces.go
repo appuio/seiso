@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	nsCommandLongDescription = `Sometimes Namespcaes are left empty in a Kubernetes cluster.
+	nsCommandLongDescription = `Sometimes Namespaces are left empty in a Kubernetes cluster.
 This command deletes Namespaces that are not being used anymore.
 A Namespace is deemed empty if no Helm releases, Pods, Deployments, StatefulSets or DaemonSets can be found.`
 )
