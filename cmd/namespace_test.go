@@ -14,13 +14,12 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 		args   []string
 		config cfg.Configuration
 	}
-	tests := []struct {
+	tests := map[string]struct {
 		name    string
 		input   args
 		wantErr bool
 	}{
-		{
-			name: "ShouldThrowError_IfNoLabelSelector",
+		"ShouldThrowError_IfNoLabelSelector": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -30,8 +29,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "ShouldThrowError_InvalidLabelSelector",
+		"ShouldThrowError_InvalidLabelSelector": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -42,8 +40,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "ShouldThrowError_IfInvalidDeleteAfterFlag",
+		"ShouldThrowError_IfInvalidDeleteAfterFlag": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -54,8 +51,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "ShouldThrowError_IfNegativeDeleteAfterFlag",
+		"ShouldThrowError_IfNegativeDeleteAfterFlag": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -66,8 +62,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "Success_IfValidDeleteAfterFlag1d",
+		"Success_IfValidDeleteAfterFlag1d": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -78,8 +73,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "Success_IfValidDeleteAfterFlag1d1y",
+		"Success_IfValidDeleteAfterFlag1d1y": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -90,8 +84,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "Success_IfValidDeleteAfterFlag1w1m",
+		"Success_IfValidDeleteAfterFlag1w1m": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
@@ -102,8 +95,7 @@ func Test_validateNamespaceCommandInput(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "Success_IfValidDeleteAfterFlag1h1s",
+		"Success_IfValidDeleteAfterFlag1h1s": {
 			input: args{
 				config: cfg.Configuration{
 					Resource: cfg.ResourceConfig{
