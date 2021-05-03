@@ -42,7 +42,7 @@ func init() {
 		"Only delete Namespaces after they were empty for this duration, e.g. [1y2mo3w4d5h6m7s]")
 }
 
-func validateNsCommandInput(cmd *cobra.Command, args []string) (returnErr error) {
+func validateNsCommandInput(cmd *cobra.Command, _ []string) (returnErr error) {
 	defer showUsageOnError(cmd, returnErr)
 	if len(config.Resource.Labels) == 0 {
 		return missingLabelSelectorError(config.Namespace, "namespaces")
@@ -58,7 +58,7 @@ func validateNsCommandInput(cmd *cobra.Command, args []string) (returnErr error)
 	return nil
 }
 
-func executeNsCleanupCommand(cmd *cobra.Command, args []string) error {
+func executeNsCleanupCommand(_ *cobra.Command, _ []string) error {
 	coreClient, err := kubernetes.NewCoreV1Client()
 	if err != nil {
 		return fmt.Errorf("cannot initiate kubernetes client: %w", err)

@@ -67,10 +67,10 @@ func (nss NamespacesService) GetEmptyFor(ctx context.Context, namespaces []corev
 	emptyNamespaces := []corev1.Namespace{}
 	namespaceMap := make(map[string]struct{}, len(namespaces))
 
-	if err := nss.getHelmReleases(ctx, namespaces, namespaceMap); err != nil {
+	if err := nss.getHelmReleases(namespaceMap); err != nil {
 		return nil, fmt.Errorf("could not get Helm releases %w", err)
 	}
-	if err := nss.getResources(ctx, namespaces, namespaceMap); err != nil {
+	if err := nss.getResources(ctx, namespaceMap); err != nil {
 		return nil, fmt.Errorf("could not get Resources %w", err)
 	}
 
@@ -112,7 +112,7 @@ func (nss NamespacesService) GetEmptyFor(ctx context.Context, namespaces []corev
 	return emptyNamespaces, nil
 }
 
-func (nss NamespacesService) getHelmReleases(ctx context.Context, namespaces []corev1.Namespace, namespaceMap map[string]struct{}) error {
+func (nss NamespacesService) getHelmReleases(namespaceMap map[string]struct{}) error {
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(genericclioptions.NewConfigFlags(true), "", helmDriverSecret, func(format string, v ...interface{}) {
 		log.Debug(fmt.Sprintf(format, v))
@@ -135,7 +135,7 @@ func (nss NamespacesService) getHelmReleases(ctx context.Context, namespaces []c
 	return nil
 }
 
-func (nss NamespacesService) getResources(ctx context.Context, namespaces []corev1.Namespace, namespaceMap map[string]struct{}) error {
+func (nss NamespacesService) getResources(ctx context.Context, namespaceMap map[string]struct{}) error {
 	for _, r := range resources {
 		resourceList, err := nss.dynamicClient.Resource(r).List(ctx, metav1.ListOptions{})
 		if err != nil {

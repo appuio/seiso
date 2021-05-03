@@ -32,22 +32,8 @@ func Test_GetEmptyFor(t *testing.T) {
 		},
 		"Delete2Namespaces": {
 			objs: []runtime.Object{
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-ns-1",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Add(-1 * time.Hour).Format(util.TimeFormat),
-						},
-					},
-				},
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-ns-2",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Add(-24 * time.Hour).Format(util.TimeFormat),
-						},
-					},
-				},
+				annotatedNamespace("test-ns-1", time.Now().UTC().Add(-1*time.Hour).Format(util.TimeFormat)),
+				annotatedNamespace("test-ns-2", time.Now().UTC().Add(-24*time.Hour).Format(util.TimeFormat)),
 			},
 			deleteAfter: "1s",
 			want:        []string{"test-ns-1", "test-ns-2"},
@@ -55,11 +41,7 @@ func Test_GetEmptyFor(t *testing.T) {
 		},
 		"DeleteNoNamespaces": {
 			objs: []runtime.Object{
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-ns-1",
-					},
-				},
+				annotatedNamespace("test-ns-1", ""),
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-ns-2",
@@ -75,35 +57,10 @@ func Test_GetEmptyFor(t *testing.T) {
 		},
 		"DeleteNotYetNamespaces": {
 			objs: []runtime.Object{
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-ns-1",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Format(util.TimeFormat),
-						},
-					},
-				},
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-ns-2",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Add(2 * time.Hour).Format(util.TimeFormat),
-						},
-					},
-				},
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-ns-3",
-					},
-				},
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "delete-test-ns",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Add(-23 * time.Hour).Format(util.TimeFormat),
-						},
-					},
-				},
+				annotatedNamespace("test-ns-1", time.Now().UTC().Format(util.TimeFormat)),
+				annotatedNamespace("test-ns-2", time.Now().UTC().Add(2*time.Hour).Format(util.TimeFormat)),
+				annotatedNamespace("test-ns-3", ""),
+				annotatedNamespace("delete-test-ns", time.Now().UTC().Add(-23*time.Hour).Format(util.TimeFormat)),
 			},
 			deleteAfter: "24h",
 			want:        []string{},
@@ -111,42 +68,21 @@ func Test_GetEmptyFor(t *testing.T) {
 		},
 		"InvalidAnnotationNamespace": {
 			objs: []runtime.Object{
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "invalid",
-						Annotations: map[string]string{
-							cleanAnnotation: "this-is-invalid",
-						},
-					},
-				},
+				annotatedNamespace("invalid", "this-is-invalid"),
 			},
 			want:    []string{},
 			wantErr: true,
 		},
 		"NamespaceNotEmpty": {
 			objs: []runtime.Object{
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "ns1",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Add(-48 * time.Hour).Format(util.TimeFormat),
-						},
-					},
-				},
+				annotatedNamespace("ns1", time.Now().UTC().Add(-48*time.Hour).Format(util.TimeFormat)),
 				&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-pod",
 						Namespace: "ns1",
 					},
 				},
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "ns2",
-						Annotations: map[string]string{
-							cleanAnnotation: time.Now().UTC().Add(-48 * time.Hour).Format(util.TimeFormat),
-						},
-					},
-				},
+				annotatedNamespace("ns2", time.Now().UTC().Add(-48*time.Hour).Format(util.TimeFormat)),
 				&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "some-deployment",
@@ -187,4 +123,22 @@ func Test_GetEmptyFor(t *testing.T) {
 			assert.ElementsMatch(t, tt.want, nsNames)
 		})
 	}
+}
+
+func annotatedNamespace(name, cleanAnnotationValue string) *corev1.Namespace {
+	var annotations map[string]string
+
+	if cleanAnnotationValue != "" {
+		annotations = map[string]string{
+			cleanAnnotation: cleanAnnotationValue,
+		}
+	}
+
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        name,
+			Annotations: annotations,
+		},
+	}
+
 }
