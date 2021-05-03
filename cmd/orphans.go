@@ -11,7 +11,7 @@ import (
 	"github.com/appuio/seiso/pkg/git"
 	"github.com/appuio/seiso/pkg/openshift"
 	"github.com/appuio/seiso/pkg/util"
-	"github.com/karrick/tparse"
+	"github.com/karrick/tparse/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -79,7 +79,7 @@ func validateOrphanCommandInput(cmd *cobra.Command, args []string) (returnErr er
 }
 
 // ExecuteOrphanCleanupCommand executes the orphan cleanup command
-func ExecuteOrphanCleanupCommand(cmd *cobra.Command, args []string) error {
+func ExecuteOrphanCleanupCommand(_ *cobra.Command, args []string) error {
 	c := config.Orphan
 	ctx := context.Background()
 	namespace, imageName, _ := splitNamespaceAndImagestream(args[0])

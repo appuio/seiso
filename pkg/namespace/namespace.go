@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/appuio/seiso/pkg/util"
-	"github.com/karrick/tparse"
+	"github.com/karrick/tparse/v2"
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
 	corev1 "k8s.io/api/core/v1"
