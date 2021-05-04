@@ -18,7 +18,6 @@ import (
 )
 
 func Test_GetEmptyFor(t *testing.T) {
-
 	tests := map[string]struct {
 		objs        []runtime.Object
 		deleteAfter string
@@ -98,12 +97,23 @@ func Test_GetEmptyFor(t *testing.T) {
 	for testName, tt := range tests {
 		t.Run(testName, func(t *testing.T) {
 			logrus.SetLevel(logrus.DebugLevel)
+
 			ctx := context.Background()
+
 			clientset := fake.NewSimpleClientset(tt.objs...)
 			fakeClient := clientset.CoreV1().Namespaces()
 			fakeDynamicClient := dynFake.NewSimpleDynamicClient(scheme.Scheme, tt.objs...)
 
 			service := NewNamespacesService(fakeClient, fakeDynamicClient, ServiceConfiguration{})
+
+			// By default, the HelmChecker is included in the list of checkers.
+			// But it requires an active k8s cluster to work.
+			// Therefore, for this test, we remove it.
+			for i, checker := range service.checkers {
+				if checker.Name() == helmCheckerName {
+					service.checkers = append(service.checkers[:i], service.checkers[i+1:]...)
+				}
+			}
 
 			allNamespaces, err := service.List(ctx, metav1.ListOptions{})
 			if !tt.wantErr {
@@ -130,7 +140,7 @@ func annotatedNamespace(name, cleanAnnotationValue string) *corev1.Namespace {
 
 	if cleanAnnotationValue != "" {
 		annotations = map[string]string{
-			cleanAnnotation: cleanAnnotationValue,
+			"syn.tools/clean": cleanAnnotationValue,
 		}
 	}
 
