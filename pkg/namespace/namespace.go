@@ -103,7 +103,7 @@ func (nss NamespacesService) GetEmptyFor(ctx context.Context, namespaces []corev
 				nsCopy.Annotations = make(map[string]string, 1)
 			}
 			nsCopy.Annotations[cleanAnnotation] = now.UTC().Format(util.TimeFormat)
-			log.Infof("Annotated namespace for deletion: %q", nsCopy.Name)
+			log.Infof("Annotated Namespace for deletion: %q", nsCopy.Name)
 			if _, err := nss.client.Update(ctx, nsCopy, metav1.UpdateOptions{}); err != nil {
 				return nil, err
 			}
