@@ -23,7 +23,6 @@ var (
 		Short:        "Cleans up your unused ConfigMaps in the Kubernetes cluster",
 		Long:         configMapCommandLongDescription,
 		Aliases:      []string{"configmap", "cm"},
-		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		PreRunE:      validateConfigMapCommandInput,
 		RunE:         executeConfigMapCleanupCommand,

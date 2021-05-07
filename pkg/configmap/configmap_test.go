@@ -19,7 +19,7 @@ type HelperKubernetes struct{}
 type HelperKubernetesErr struct{}
 
 func (k *HelperKubernetes) ResourceContains(_ context.Context, namespace, value string, resource schema.GroupVersionResource) (bool, error) {
-	if "nameA" == value {
+	if value == "nameA" {
 		return false, nil
 	} else {
 		return true, nil

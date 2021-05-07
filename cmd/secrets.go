@@ -23,7 +23,6 @@ var (
 		Short:        "Cleans up your unused Secrets in the Kubernetes cluster",
 		Long:         secretCommandLongDescription,
 		Aliases:      []string{"secret"},
-		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		PreRunE:      validateSecretCommandInput,
 		RunE:         executeSecretCleanupCommand,

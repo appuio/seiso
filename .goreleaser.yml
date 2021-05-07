@@ -32,6 +32,8 @@ dockers:
 - image_templates:
   - "docker.io/appuio/seiso:v{{ .Version }}"
   - "docker.io/appuio/seiso:v{{ .Major }}"
+  - "quay.io/appuio/seiso:v{{ .Version }}"
+  - "quay.io/appuio/seiso:v{{ .Major }}"
 
 nfpms:
 - vendor: APPUiO

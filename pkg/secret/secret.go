@@ -19,23 +19,6 @@ import (
 )
 
 type (
-	Service interface {
-		// List returns a list of Secrets from a namespace
-		List(ctx context.Context, listOptions metav1.ListOptions) (resources []v1.Secret, err error)
-		// GetUnused returns unused Secrets.
-		GetUnused(ctx context.Context, namespace string, secrets []v1.Secret) (unusedSecrets []v1.Secret, funcErr error)
-		// Delete removes the given Secrets. Errors are logged only.
-		Delete(ctx context.Context, secrets []v1.Secret) error
-		// FilterByTime returns Secrets which are older than specified date
-		FilterByTime(secrets []v1.Secret, olderThan time.Time) (filteredSecrets []v1.Secret)
-		// FilterByMaxCount returns the latest resources until limited by <keep>. The list of secrets is sorted by
-		// CreationTimestamp, with newest entries first.
-		FilterByMaxCount(secrets []v1.Secret, keep int) (filteredSecrets []v1.Secret)
-		// Print prints the given Secrets line by line. In batch mode, only the Secret name is printed, otherwise default
-		// log with info level
-		Print(secrets []v1.Secret)
-	}
-
 	SecretsService struct {
 		configuration ServiceConfiguration
 		client        core.SecretInterface
@@ -47,7 +30,7 @@ type (
 )
 
 // NewSecretsService creates a new Service instance
-func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes, configuration ServiceConfiguration) Service {
+func NewSecretsService(client core.SecretInterface, helper kubernetes.Kubernetes, configuration ServiceConfiguration) SecretsService {
 	return SecretsService{
 		client:        client,
 		helper:        helper,
