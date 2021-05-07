@@ -134,7 +134,7 @@ func (nss NamespacesService) Print(namespaces []corev1.Namespace) {
 
 	for _, ns := range namespaces {
 		if nss.configuration.Batch {
-			fmt.Println(ns.GetName())
+			fmt.Println(ns.Name)
 		} else {
 			log.Infof("Found candidate: %s", ns.Name)
 		}
