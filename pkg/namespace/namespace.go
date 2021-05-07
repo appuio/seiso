@@ -78,7 +78,7 @@ func (nss NamespacesService) GetEmptyFor(ctx context.Context, namespaces []corev
 		if _, ok := nonEmptyNamespaces[ns.Name]; ok {
 			// Namespace is not empty
 			if _, ok := ns.Annotations[cleanAnnotation]; ok && !nss.configuration.Batch {
-				log.Warnf("Non empty namespace is annotated for deletion, skip: %q", ns.Name)
+				log.Warnf("Namespace is annotated for deletion, but not empty. Skipping %q", ns.Name)
 			}
 			continue
 		}
