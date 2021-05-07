@@ -24,7 +24,6 @@ var (
 		Short:        "Cleans up your empty Namespaces",
 		Long:         nsCommandLongDescription,
 		Aliases:      []string{"namespace", "ns"},
-		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		PreRunE:      validateNsCommandInput,
 		RunE:         executeNsCleanupCommand,
