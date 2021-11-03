@@ -8,7 +8,7 @@ require (
 	github.com/knadh/koanf v1.3.2
 	github.com/onsi/ginkgo v1.14.1 // indirect
 	github.com/openshift/api v0.0.0-20210202165416-a9e731090f5e
-	github.com/openshift/client-go v0.0.0-20210112165513-ebc401615f47
+	github.com/openshift/client-go/v3 v3.9.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
