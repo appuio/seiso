@@ -16,11 +16,10 @@ var (
 		{Version: "v1", Resource: "pods"},
 		{Group: "apps", Version: "v1", Resource: "statefulsets"},
 		{Group: "apps", Version: "v1", Resource: "deployments"},
+		{Group: "apps", Version: "v1", Resource: "daemonsets"},
+		{Group: "apps", Version: "v1", Resource: "replicasets"},
 		{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"},
-		{Group: "batch", Version: "v1beta1", Resource: "cronjobs"},
-		{Group: "extensions", Version: "v1beta1", Resource: "daemonsets"},
-		{Group: "extensions", Version: "v1beta1", Resource: "deployments"},
-		{Group: "extensions", Version: "v1beta1", Resource: "replicasets"},
+		{Group: "batch", Version: "v1", Resource: "cronjobs"},
 	}
 	helper = kubernetes.New()
 )
