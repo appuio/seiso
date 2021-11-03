@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/go-version v1.3.0
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/karrick/tparse/v2 v2.8.2
-	github.com/knadh/koanf v0.16.0
+	github.com/knadh/koanf v1.3.2
 	github.com/onsi/ginkgo v1.14.1 // indirect
 	github.com/onsi/gomega v1.10.2 // indirect
 	github.com/openshift/api v0.0.0-20210202165416-a9e731090f5e
