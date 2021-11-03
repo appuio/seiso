@@ -30,6 +30,9 @@ Inspired by Robert C. Martin's book, [Clean Code](https://www.investigatii.md/up
 * Empty [Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
   in your Kubernetes cluster.
 
+## Kubernetes version support
+Seiso >= 1.0 only supports Kubernetes >= 1.18
+
 ## Usage
 
 ```console
@@ -43,6 +46,7 @@ seiso configmaps --help
 seiso secrets --help
 seiso namespaces --help
 ```
+
 
 ## Why should I use this tool?
 
