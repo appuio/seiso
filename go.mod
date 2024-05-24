@@ -3,7 +3,7 @@ module github.com/appuio/seiso
 go 1.16
 
 require (
-	github.com/hashicorp/go-version v1.3.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/knadh/koanf v1.3.2
 	github.com/onsi/ginkgo v1.14.1 // indirect
