@@ -7,7 +7,7 @@ require (
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/knadh/koanf v1.3.2
 	github.com/onsi/ginkgo v1.14.1 // indirect
-	github.com/openshift/api v0.0.0-20210521075222-e273a339932a
+	github.com/openshift/api 684b2b1679ba
 	github.com/openshift/client-go v0.0.0-20210521082421-73d9475a9142
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
