@@ -7,7 +7,7 @@ import (
 
 	"github.com/appuio/seiso/cfg"
 
-	"gopkg.in/src-d/go-git.v4"
+	"github.com/go-git/go-git/v5"
 )
 
 // GetCommitHashes returns the commit hashes of a given repository ordered by the `git.LogOrderCommitterTime`. If `commitLimit` is 0 all commits will be returned.
