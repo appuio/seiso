@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/hashicorp/go-version v1.3.0
 	github.com/karrick/tparse/v2 v2.8.2
-	github.com/knadh/koanf v1.3.2
+	github.com/knadh/koanf v1.5.0
 	github.com/onsi/ginkgo v1.14.1 // indirect
 	github.com/openshift/api v0.0.0-20210521075222-e273a339932a
 	github.com/openshift/client-go v0.0.0-20210521082421-73d9475a9142
