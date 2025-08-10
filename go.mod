@@ -3,6 +3,8 @@ module github.com/appuio/seiso
 go 1.16
 
 require (
+	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/go-version v1.3.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/knadh/koanf v1.3.2
@@ -24,5 +26,5 @@ require (
 
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
-	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
+	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc4+incompatible
 )
